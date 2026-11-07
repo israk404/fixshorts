@@ -1,0 +1,15 @@
+Subreddit: r/techsupport
+URL: (sample post, written for testing)
+Title: Laptop Wi-Fi disconnects every 10-15 minutes, have to turn Wi-Fi off and on to get it back (Windows 11)
+
+Lenovo IdeaPad, Windows 11. Every 10 to 15 minutes the Wi-Fi just drops. The icon shows no internet and I have to toggle Wi-Fi off and on. My phone and my brother's laptop on the same router are totally fine, so it's not the router. Already restarted everything. Any ideas?
+
+Top comments:
+[412 upvotes] Device Manager > Network adapters > your wifi card > Properties > Power Management tab > uncheck "Allow the computer to turn off this device to save power". Windows keeps putting the card to sleep. Fixed mine instantly.
+  [OP reply] This helped a lot, it went from every 10 min to maybe once a day.
+[230 upvotes] Don't use the driver Windows Update installs. Get the newest one straight from Intel or Realtek (whichever card you have) or from Lenovo's support page.
+  [OP reply] Updated the Intel driver from Intel's site and it hasn't dropped once since yesterday. Thank you!
+[96 upvotes] If nothing else works: Settings > Network & internet > Advanced network settings > Network reset. Heads up it forgets all your saved wifi passwords.
+[60 upvotes] Whatever you do, don't install those "driver booster" or "driver updater" apps. Half of them bundle junk and they install the wrong drivers.
+[40 upvotes] just buy a new laptop lol
+[18 upvotes] run netsh winsock reset in cmd, worked for me once on windows 7

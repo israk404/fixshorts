@@ -1,0 +1,7 @@
+kokoro-onnx>=0.6.1
+onnxruntime>=1.18
+soundfile>=0.12
+numpy>=1.26
+Pillow>=10.1
+openai>=1.40
+pydantic>=2.5
