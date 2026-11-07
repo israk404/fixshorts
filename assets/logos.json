@@ -1,0 +1,700 @@
+{
+ "1password": {
+  "title": "1Password",
+  "hex": "145FE4",
+  "source": "simple-icons"
+ },
+ "7zip": {
+  "title": "7Zip",
+  "hex": "000000",
+  "source": "simple-icons"
+ },
+ "acer": {
+  "title": "Acer",
+  "hex": "83B81A",
+  "source": "simple-icons"
+ },
+ "adobe": {
+  "title": "Adobe",
+  "hex": "FF0000",
+  "source": "tabler",
+  "glyph": "brand-adobe"
+ },
+ "amazon": {
+  "title": "Amazon",
+  "hex": "FF9900",
+  "source": "tabler",
+  "glyph": "brand-amazon"
+ },
+ "amd": {
+  "title": "AMD",
+  "hex": "ED1C24",
+  "source": "simple-icons"
+ },
+ "android": {
+  "title": "Android",
+  "hex": "3DDC84",
+  "source": "simple-icons"
+ },
+ "androidauto": {
+  "title": "Android Auto",
+  "hex": "3DDC84",
+  "source": "simple-icons"
+ },
+ "anydesk": {
+  "title": "AnyDesk",
+  "hex": "EF443B",
+  "source": "simple-icons"
+ },
+ "apple": {
+  "title": "Apple",
+  "hex": "000000",
+  "source": "simple-icons"
+ },
+ "applemusic": {
+  "title": "Apple Music",
+  "hex": "FA243C",
+  "source": "simple-icons"
+ },
+ "applepay": {
+  "title": "Apple Pay",
+  "hex": "000000",
+  "source": "simple-icons"
+ },
+ "appletv": {
+  "title": "Apple TV",
+  "hex": "000000",
+  "source": "simple-icons"
+ },
+ "appstore": {
+  "title": "App Store",
+  "hex": "0D96F6",
+  "source": "simple-icons"
+ },
+ "asus": {
+  "title": "ASUS",
+  "hex": "000000",
+  "source": "simple-icons"
+ },
+ "avast": {
+  "title": "Avast",
+  "hex": "FF7800",
+  "source": "simple-icons"
+ },
+ "battledotnet": {
+  "title": "Battle.net",
+  "hex": "4381C3",
+  "source": "simple-icons"
+ },
+ "bing": {
+  "title": "Bing",
+  "hex": "008373",
+  "source": "tabler",
+  "glyph": "brand-bing"
+ },
+ "bitdefender": {
+  "title": "Bitdefender",
+  "hex": "ED1C24",
+  "source": "simple-icons"
+ },
+ "bitwarden": {
+  "title": "Bitwarden",
+  "hex": "175DDC",
+  "source": "simple-icons"
+ },
+ "bluetooth": {
+  "title": "Bluetooth",
+  "hex": "0082FC",
+  "source": "simple-icons"
+ },
+ "bose": {
+  "title": "Bose",
+  "hex": "000000",
+  "source": "simple-icons"
+ },
+ "brave": {
+  "title": "Brave",
+  "hex": "FB542B",
+  "source": "simple-icons"
+ },
+ "chatgpt": {
+  "title": "ChatGPT",
+  "hex": "74AA9C",
+  "source": "tabler",
+  "glyph": "brand-openai"
+ },
+ "cloudflare": {
+  "title": "Cloudflare",
+  "hex": "F38020",
+  "source": "simple-icons"
+ },
+ "corsair": {
+  "title": "Corsair",
+  "hex": "231F20",
+  "source": "simple-icons"
+ },
+ "dell": {
+  "title": "Dell",
+  "hex": "007DB8",
+  "source": "simple-icons"
+ },
+ "discord": {
+  "title": "Discord",
+  "hex": "5865F2",
+  "source": "simple-icons"
+ },
+ "dropbox": {
+  "title": "Dropbox",
+  "hex": "0061FF",
+  "source": "simple-icons"
+ },
+ "duckduckgo": {
+  "title": "DuckDuckGo",
+  "hex": "DE5833",
+  "source": "simple-icons"
+ },
+ "ea": {
+  "title": "EA",
+  "hex": "000000",
+  "source": "simple-icons"
+ },
+ "epicgames": {
+  "title": "Epic Games",
+  "hex": "313131",
+  "source": "simple-icons"
+ },
+ "epson": {
+  "title": "Epson",
+  "hex": "003399",
+  "source": "simple-icons"
+ },
+ "expressvpn": {
+  "title": "ExpressVPN",
+  "hex": "DA3940",
+  "source": "simple-icons"
+ },
+ "facebook": {
+  "title": "Facebook",
+  "hex": "0866FF",
+  "source": "simple-icons"
+ },
+ "firefox": {
+  "title": "Firefox",
+  "hex": "FF7139",
+  "source": "simple-icons"
+ },
+ "fitbit": {
+  "title": "Fitbit",
+  "hex": "00B0B9",
+  "source": "simple-icons"
+ },
+ "garmin": {
+  "title": "Garmin",
+  "hex": "000000",
+  "source": "simple-icons"
+ },
+ "github": {
+  "title": "GitHub",
+  "hex": "181717",
+  "source": "simple-icons"
+ },
+ "gmail": {
+  "title": "Gmail",
+  "hex": "EA4335",
+  "source": "simple-icons"
+ },
+ "google": {
+  "title": "Google",
+  "hex": "4285F4",
+  "source": "simple-icons"
+ },
+ "googleassistant": {
+  "title": "Google Assistant",
+  "hex": "4285F4",
+  "source": "simple-icons"
+ },
+ "googleauthenticator": {
+  "title": "Google Authenticator",
+  "hex": "4285F4",
+  "source": "simple-icons"
+ },
+ "googlecalendar": {
+  "title": "Google Calendar",
+  "hex": "4285F4",
+  "source": "simple-icons"
+ },
+ "googlechrome": {
+  "title": "Google Chrome",
+  "hex": "4285F4",
+  "source": "simple-icons"
+ },
+ "googledrive": {
+  "title": "Google Drive",
+  "hex": "4285F4",
+  "source": "simple-icons"
+ },
+ "googlehome": {
+  "title": "Google Home",
+  "hex": "4285F4",
+  "source": "simple-icons"
+ },
+ "googlelens": {
+  "title": "Google Lens",
+  "hex": "4285F4",
+  "source": "simple-icons"
+ },
+ "googlemaps": {
+  "title": "Google Maps",
+  "hex": "4285F4",
+  "source": "simple-icons"
+ },
+ "googlemeet": {
+  "title": "Google Meet",
+  "hex": "00897B",
+  "source": "simple-icons"
+ },
+ "googlemessages": {
+  "title": "Google Messages",
+  "hex": "1A73E8",
+  "source": "simple-icons"
+ },
+ "googlepay": {
+  "title": "Google Pay",
+  "hex": "4285F4",
+  "source": "simple-icons"
+ },
+ "googlephotos": {
+  "title": "Google Photos",
+  "hex": "4285F4",
+  "source": "simple-icons"
+ },
+ "googleplay": {
+  "title": "Google Play",
+  "hex": "414141",
+  "source": "simple-icons"
+ },
+ "googletranslate": {
+  "title": "Google Translate",
+  "hex": "4285F4",
+  "source": "simple-icons"
+ },
+ "googletv": {
+  "title": "Google TV",
+  "hex": "4285F4",
+  "source": "simple-icons"
+ },
+ "honor": {
+  "title": "Honor",
+  "hex": "000000",
+  "source": "simple-icons"
+ },
+ "hp": {
+  "title": "HP",
+  "hex": "0096D6",
+  "source": "simple-icons"
+ },
+ "huawei": {
+  "title": "Huawei",
+  "hex": "FF0000",
+  "source": "simple-icons"
+ },
+ "icloud": {
+  "title": "iCloud",
+  "hex": "3693F3",
+  "source": "simple-icons"
+ },
+ "instagram": {
+  "title": "Instagram",
+  "hex": "FF0069",
+  "source": "simple-icons"
+ },
+ "intel": {
+  "title": "Intel",
+  "hex": "0071C5",
+  "source": "simple-icons"
+ },
+ "ios": {
+  "title": "iOS",
+  "hex": "000000",
+  "source": "simple-icons"
+ },
+ "jbl": {
+  "title": "JBL",
+  "hex": "FF3300",
+  "source": "simple-icons"
+ },
+ "kaspersky": {
+  "title": "Kaspersky",
+  "hex": "006D5C",
+  "source": "simple-icons"
+ },
+ "lastpass": {
+  "title": "LastPass",
+  "hex": "D32D27",
+  "source": "simple-icons"
+ },
+ "lenovo": {
+  "title": "Lenovo",
+  "hex": "E2231A",
+  "source": "simple-icons"
+ },
+ "lg": {
+  "title": "LG",
+  "hex": "A50034",
+  "source": "simple-icons"
+ },
+ "libreoffice": {
+  "title": "LibreOffice",
+  "hex": "18A303",
+  "source": "simple-icons"
+ },
+ "linux": {
+  "title": "Linux",
+  "hex": "FCC624",
+  "source": "simple-icons"
+ },
+ "macos": {
+  "title": "macOS",
+  "hex": "000000",
+  "source": "simple-icons"
+ },
+ "malwarebytes": {
+  "title": "Malwarebytes",
+  "hex": "0D3ECC",
+  "source": "simple-icons"
+ },
+ "mcafee": {
+  "title": "McAfee",
+  "hex": "C01818",
+  "source": "simple-icons"
+ },
+ "messenger": {
+  "title": "Messenger",
+  "hex": "0866FF",
+  "source": "simple-icons"
+ },
+ "microsoftedge": {
+  "title": "Microsoft Edge",
+  "hex": "0078D7",
+  "source": "tabler",
+  "glyph": "brand-edge"
+ },
+ "microsoftoffice": {
+  "title": "Microsoft Office",
+  "hex": "D83B01",
+  "source": "tabler",
+  "glyph": "brand-office"
+ },
+ "microsoftteams": {
+  "title": "Microsoft Teams",
+  "hex": "6264A7",
+  "source": "tabler",
+  "glyph": "brand-teams"
+ },
+ "minecraft": {
+  "title": "Minecraft",
+  "hex": "62B47A",
+  "source": "tabler",
+  "glyph": "brand-minecraft"
+ },
+ "motorola": {
+  "title": "Motorola",
+  "hex": "E1140A",
+  "source": "simple-icons"
+ },
+ "msi": {
+  "title": "MSI",
+  "hex": "FF0000",
+  "source": "simple-icons"
+ },
+ "netflix": {
+  "title": "Netflix",
+  "hex": "E50914",
+  "source": "simple-icons"
+ },
+ "netgear": {
+  "title": "NETGEAR",
+  "hex": "2C262D",
+  "source": "simple-icons"
+ },
+ "nintendoswitch": {
+  "title": "Nintendo Switch",
+  "hex": "E60012",
+  "source": "tabler",
+  "glyph": "device-nintendo"
+ },
+ "nokia": {
+  "title": "Nokia",
+  "hex": "005AFF",
+  "source": "simple-icons"
+ },
+ "nordvpn": {
+  "title": "NordVPN",
+  "hex": "4687FF",
+  "source": "simple-icons"
+ },
+ "norton": {
+  "title": "Norton",
+  "hex": "FFE01A",
+  "source": "simple-icons"
+ },
+ "notion": {
+  "title": "Notion",
+  "hex": "000000",
+  "source": "simple-icons"
+ },
+ "nvidia": {
+  "title": "NVIDIA",
+  "hex": "76B900",
+  "source": "simple-icons"
+ },
+ "obsstudio": {
+  "title": "OBS Studio",
+  "hex": "302E31",
+  "source": "simple-icons"
+ },
+ "onedrive": {
+  "title": "OneDrive",
+  "hex": "0078D4",
+  "source": "tabler",
+  "glyph": "brand-onedrive"
+ },
+ "oneplus": {
+  "title": "OnePlus",
+  "hex": "F5010C",
+  "source": "simple-icons"
+ },
+ "opera": {
+  "title": "Opera",
+  "hex": "FF1B2D",
+  "source": "simple-icons"
+ },
+ "oppo": {
+  "title": "OPPO",
+  "hex": "2D683D",
+  "source": "simple-icons"
+ },
+ "paypal": {
+  "title": "PayPal",
+  "hex": "002991",
+  "source": "simple-icons"
+ },
+ "philipshue": {
+  "title": "Philips Hue",
+  "hex": "0065D3",
+  "source": "simple-icons"
+ },
+ "pinterest": {
+  "title": "Pinterest",
+  "hex": "BD081C",
+  "source": "simple-icons"
+ },
+ "playstation": {
+  "title": "PlayStation",
+  "hex": "0070D1",
+  "source": "simple-icons"
+ },
+ "protonvpn": {
+  "title": "Proton VPN",
+  "hex": "66DEB1",
+  "source": "simple-icons"
+ },
+ "python": {
+  "title": "Python",
+  "hex": "3776AB",
+  "source": "simple-icons"
+ },
+ "qualcomm": {
+  "title": "Qualcomm",
+  "hex": "3253DC",
+  "source": "simple-icons"
+ },
+ "raspberrypi": {
+  "title": "Raspberry Pi",
+  "hex": "A22846",
+  "source": "simple-icons"
+ },
+ "razer": {
+  "title": "Razer",
+  "hex": "00FF00",
+  "source": "simple-icons"
+ },
+ "ring": {
+  "title": "Ring",
+  "hex": "1C9AD6",
+  "source": "simple-icons"
+ },
+ "roblox": {
+  "title": "Roblox",
+  "hex": "000000",
+  "source": "simple-icons"
+ },
+ "roku": {
+  "title": "Roku",
+  "hex": "662D91",
+  "source": "simple-icons"
+ },
+ "safari": {
+  "title": "Safari",
+  "hex": "006CFF",
+  "source": "simple-icons"
+ },
+ "samsung": {
+  "title": "Samsung",
+  "hex": "1428A0",
+  "source": "simple-icons"
+ },
+ "signal": {
+  "title": "Signal",
+  "hex": "3B45FD",
+  "source": "simple-icons"
+ },
+ "skype": {
+  "title": "Skype",
+  "hex": "00AFF0",
+  "source": "tabler",
+  "glyph": "brand-skype"
+ },
+ "smartthings": {
+  "title": "SmartThings",
+  "hex": "15BFFF",
+  "source": "simple-icons"
+ },
+ "snapchat": {
+  "title": "Snapchat",
+  "hex": "FFFC00",
+  "source": "simple-icons"
+ },
+ "sonos": {
+  "title": "Sonos",
+  "hex": "000000",
+  "source": "simple-icons"
+ },
+ "sony": {
+  "title": "Sony",
+  "hex": "FFFFFF",
+  "source": "simple-icons"
+ },
+ "spotify": {
+  "title": "Spotify",
+  "hex": "1ED760",
+  "source": "simple-icons"
+ },
+ "steam": {
+  "title": "Steam",
+  "hex": "000000",
+  "source": "simple-icons"
+ },
+ "surfshark": {
+  "title": "Surfshark",
+  "hex": "1EBFBF",
+  "source": "simple-icons"
+ },
+ "teamviewer": {
+  "title": "TeamViewer",
+  "hex": "050A52",
+  "source": "simple-icons"
+ },
+ "telegram": {
+  "title": "Telegram",
+  "hex": "26A5E4",
+  "source": "simple-icons"
+ },
+ "threads": {
+  "title": "Threads",
+  "hex": "000000",
+  "source": "simple-icons"
+ },
+ "thunderbird": {
+  "title": "Thunderbird",
+  "hex": "0A84FF",
+  "source": "simple-icons"
+ },
+ "tiktok": {
+  "title": "TikTok",
+  "hex": "000000",
+  "source": "simple-icons"
+ },
+ "tplink": {
+  "title": "TP-Link",
+  "hex": "4ACBD6",
+  "source": "simple-icons"
+ },
+ "twitch": {
+  "title": "Twitch",
+  "hex": "9146FF",
+  "source": "simple-icons"
+ },
+ "ubisoft": {
+  "title": "Ubisoft",
+  "hex": "000000",
+  "source": "simple-icons"
+ },
+ "ubuntu": {
+  "title": "Ubuntu",
+  "hex": "E95420",
+  "source": "simple-icons"
+ },
+ "viber": {
+  "title": "Viber",
+  "hex": "7360F2",
+  "source": "simple-icons"
+ },
+ "virtualbox": {
+  "title": "VirtualBox",
+  "hex": "2F61B4",
+  "source": "simple-icons"
+ },
+ "vivaldi": {
+  "title": "Vivaldi",
+  "hex": "EF3939",
+  "source": "simple-icons"
+ },
+ "vivo": {
+  "title": "vivo",
+  "hex": "415FFF",
+  "source": "simple-icons"
+ },
+ "vlcmediaplayer": {
+  "title": "VLC media player",
+  "hex": "FF8800",
+  "source": "simple-icons"
+ },
+ "whatsapp": {
+  "title": "WhatsApp",
+  "hex": "25D366",
+  "source": "simple-icons"
+ },
+ "windows": {
+  "title": "Windows",
+  "hex": "0078D4",
+  "source": "tabler",
+  "glyph": "brand-windows"
+ },
+ "x": {
+  "title": "X",
+  "hex": "000000",
+  "source": "simple-icons"
+ },
+ "xbox": {
+  "title": "Xbox",
+  "hex": "107C10",
+  "source": "tabler",
+  "glyph": "brand-xbox"
+ },
+ "xiaomi": {
+  "title": "Xiaomi",
+  "hex": "FF6900",
+  "source": "simple-icons"
+ },
+ "youtube": {
+  "title": "YouTube",
+  "hex": "FF0000",
+  "source": "simple-icons"
+ },
+ "zoom": {
+  "title": "Zoom",
+  "hex": "0B5CFF",
+  "source": "simple-icons"
+ }
+}

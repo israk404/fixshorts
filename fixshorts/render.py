@@ -79,7 +79,7 @@ def label_for(seg, fix_no, n_fixes):
     }[seg.kind]
 
 
-def card_bases(segments, device, icon, theme_name, cfg, L):
+def card_bases(segments, device, icon, theme_name, cfg, L, logo=""):
     """Background + card for every segment, as RGBA images."""
     t = cards.theme(theme_name)
     n_fixes = sum(1 for s in segments if s.kind == "fix")
@@ -90,7 +90,7 @@ def card_bases(segments, device, icon, theme_name, cfg, L):
             fix_no += 1
         base = bg.copy()
         base.alpha_composite(cards.card_layer(seg, label_for(seg, fix_no, n_fixes), device, theme_name,
-                                              n_fixes, L, icon))
+                                              n_fixes, L, icon, logo))
         cards.channel_mark(base, cfg["video"].get("channel_name", ""), t, L)
         bases.append(base)
     return bases
@@ -99,7 +99,7 @@ def card_bases(segments, device, icon, theme_name, cfg, L):
 # ---------- rendering ----------
 
 def render_video(segments, device, icon, narration, job_dir: Path, cfg, theme_name, L, out_name,
-                 progress=lambda f: None, cover_name=None):
+                 progress=lambda f: None, cover_name=None, logo=""):
     v = cfg["video"]
     fps, ff = v["fps"], v["ffmpeg"]
     work = job_dir / "_work" / L.name
@@ -110,7 +110,7 @@ def render_video(segments, device, icon, narration, job_dir: Path, cfg, theme_na
     bounds = scene_bounds(narration, fps)
     chunks = caption_chunks(narration.words)
     words_by_seg = [[w for w in narration.words if w.segment == i] for i in range(len(segments))]
-    bases = card_bases(segments, device, icon, theme_name, cfg, L)
+    bases = card_bases(segments, device, icon, theme_name, cfg, L, logo)
 
     if cover_name:
         cover = bases[0].copy()

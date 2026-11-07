@@ -1,7 +1,7 @@
 """YouTube thumbnails (1280x720) in three styles: bold, split and clean."""
 from PIL import Image, ImageDraw, ImageFilter
 
-from .cards import font, glyph, icon_font, theme, wrap
+from .cards import LOGOS, brand_color, font, glyph, icon_font, logo_image, theme, wrap
 
 W, H = 1280, 720
 STYLES = ("bold", "split", "clean")
@@ -39,6 +39,25 @@ def _badge(img, x, y, text, bg, fg, check=True):
     img.alpha_composite(big)
 
 
+def _problem_badge(img, cx, cy, d, icon, fill, ring):
+    """Small round badge with the problem icon, e.g. a red Wi-Fi-off over the Windows logo."""
+    big = Image.new("RGBA", (d * 2, d * 2), (0, 0, 0, 0))
+    ImageDraw.Draw(big).ellipse([0, 0, d * 2 - 1, d * 2 - 1], fill=fill, outline=ring, width=10)
+    badge = big.resize((d, d), Image.LANCZOS)
+    ImageDraw.Draw(badge).text((d / 2, d / 2), glyph(icon), font=icon_font(int(d * 0.58)), fill=(255, 255, 255), anchor="mm")
+    img.alpha_composite(badge, (int(cx - d / 2), int(cy - d / 2)))
+
+
+def _logo_or_icon(img, slug, icon, cx, cy, size, bg, icon_color):
+    """Draw the brand logo when there is one, else the problem icon. Returns True if a logo was drawn."""
+    logo = logo_image(slug, size, brand_color(slug, bg)) if slug in LOGOS else None
+    if logo:
+        img.alpha_composite(logo, (int(cx - logo.width / 2), int(cy - logo.height / 2)))
+        return True
+    ImageDraw.Draw(img).text((cx, cy), glyph(icon), font=icon_font(int(size * 1.08)), fill=icon_color, anchor="mm")
+    return False
+
+
 def _glow_bg(accent, base=(10, 13, 20)):
     img = Image.new("RGBA", (W, H), base + (255,))
     glow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
@@ -72,7 +91,11 @@ def make_thumbnail(script, theme_name, style, out_path):
         d.rectangle([0, band_top, W, band_top + 6], fill=(255, 255, 255))
         icon_y = band_top / 2
         icon_size = int(min(270, band_top * 0.72))
-        d.text((top_x / 2 + 20, icon_y), icon, font=icon_font(icon_size), fill=danger, anchor="mm")
+        left_cx = top_x / 2 + 10
+        if _logo_or_icon(img, script.logo, script.icon, left_cx, icon_y, int(icon_size * 0.9), (52, 16, 20), danger):
+            _problem_badge(img, left_cx + icon_size * 0.42, icon_y + icon_size * 0.34, int(icon_size * 0.42),
+                           script.icon, danger + (255,), (52, 16, 20, 255))
+        d = ImageDraw.Draw(img)
         d.text(((top_x + W) / 2, icon_y), glyph("circle-check"), font=icon_font(icon_size), fill=good, anchor="mm")
         for i, line in enumerate(lines):
             _stroke_text(d, (W / 2 - f.getlength(line) / 2, y + i * line_h - 10), line, f, (255, 255, 255), (0, 0, 0), 6)
@@ -87,7 +110,9 @@ def make_thumbnail(script, theme_name, style, out_path):
         for i, line in enumerate(lines):
             d.text((70, y + i * line_h), line, font=f, fill=ink)
         d.ellipse([850, 150, 1270, 570], fill=ink)
-        d.text((1060, 360), icon, font=icon_font(250), fill=accent, anchor="mm")
+        if _logo_or_icon(img, script.logo, script.icon, 1060, 360, 230, ink, accent):
+            _problem_badge(img, 1205, 505, 120, script.icon, danger + (255,), ink + (255,))
+        d = ImageDraw.Draw(img)
         if device:
             d.text((72, 64), device, font=font("Bold", 34), fill=ink)
 
@@ -101,7 +126,9 @@ def make_thumbnail(script, theme_name, style, out_path):
                    outline=accent, width=16)
         img.alpha_composite(ring.resize((W, H), Image.LANCZOS))
         d = ImageDraw.Draw(img)
-        d.text((cx, cy), icon, font=icon_font(270), fill=accent, anchor="mm")
+        if _logo_or_icon(img, script.logo, script.icon, cx, cy, 250, (18, 23, 33), accent):
+            _problem_badge(img, cx + 165, cy + 165, 130, script.icon, danger + (255,), (10, 13, 20, 255))
+        d = ImageDraw.Draw(img)
         f, lines, size = _fit_text(text, 650, 3, 132)
         line_h = int(size * 1.02)
         y = 70

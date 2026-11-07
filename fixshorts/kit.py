@@ -17,7 +17,8 @@ def format_segments(script, fmt):
         text = s.narration
         if LINK_TOKEN in text:
             text = text.replace(LINK_TOKEN, line if n_links else "")
-        out.append(Segment(kind=s.kind, headline=s.headline, detail=s.detail, narration=" ".join(text.split())))
+        out.append(Segment(kind=s.kind, headline=s.headline, detail=s.detail, narration=" ".join(text.split()),
+                           logo=s.logo))
     return out
 
 

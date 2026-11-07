@@ -17,43 +17,50 @@
       "kind": "hook",
       "headline": "Laptop Wi-Fi keeps dropping?",
       "detail": "Every other device works fine",
-      "narration": "Your laptop's Wi-Fi keeps dropping every few minutes while everything else stays online? Here's how to fix it."
+      "narration": "Your laptop's Wi-Fi keeps dropping every few minutes while everything else stays online? Here's how to fix it.",
+      "logo": ""
     },
     {
       "kind": "why",
       "headline": "Windows puts your Wi-Fi card to sleep",
       "detail": "",
-      "narration": "Most of the time, Windows is putting your Wi-Fi card to sleep to save power, or it's running an old generic driver."
+      "narration": "Most of the time, Windows is putting your Wi-Fi card to sleep to save power, or it's running an old generic driver.",
+      "logo": ""
     },
     {
       "kind": "fix",
       "headline": "Turn off Wi-Fi power saving",
       "detail": "Device Manager › Network adapters › Properties › Power Management",
-      "narration": "Open Device Manager, expand Network adapters, and open your Wi-Fi card's properties. On the Power Management tab, untick the box that lets Windows turn it off to save power."
+      "narration": "Open Device Manager, expand Network adapters, and open your Wi-Fi card's properties. On the Power Management tab, untick the box that lets Windows turn it off to save power.",
+      "logo": ""
     },
     {
       "kind": "fix",
       "headline": "Install the maker's newest driver",
       "detail": "Intel, Realtek or your laptop's support page",
-      "narration": "Next, skip the driver Windows Update gave you and install the newest one from Intel or your laptop maker. {LINK}"
+      "narration": "Next, skip the driver Windows Update gave you and install the newest one from Intel or your laptop maker. {LINK}",
+      "logo": "intel"
     },
     {
       "kind": "fix",
       "headline": "Reset your network settings",
       "detail": "Settings › Network & internet › Advanced › Network reset",
-      "narration": "Still dropping? Open Settings, then Network and internet, then Advanced network settings, and hit Network reset. Heads up, it forgets your saved Wi-Fi passwords."
+      "narration": "Still dropping? Open Settings, then Network and internet, then Advanced network settings, and hit Network reset. Heads up, it forgets your saved Wi-Fi passwords.",
+      "logo": ""
     },
     {
       "kind": "avoid",
       "headline": "Don't use driver booster apps",
       "detail": "",
-      "narration": "And don't install driver booster apps. Many bundle junk and install the wrong driver."
+      "narration": "And don't install driver booster apps. Many bundle junk and install the wrong driver.",
+      "logo": ""
     },
     {
       "kind": "cta",
       "headline": "Which fix worked for you?",
       "detail": "Comment the number below",
-      "narration": "Which one fixed yours? Tell me in the comments."
+      "narration": "Which one fixed yours? Tell me in the comments.",
+      "logo": ""
     }
   ],
   "links": [
@@ -84,7 +91,12 @@
       "laptop wifi problem",
       "intel wifi driver"
     ],
-    "hashtags": ["#windows11", "#wifi", "#techtips"],
+    "hashtags": [
+      "#windows11",
+      "#wifi",
+      "#techtips"
+    ],
     "pinned_comment": "Which fix worked for you: 1, 2 or 3? Drop the number so others know what to try first."
-  }
+  },
+  "logo": "windows"
 }

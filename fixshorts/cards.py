@@ -12,6 +12,7 @@ from .config import ROOT
 
 FONTS = ROOT / "assets" / "fonts"
 ICON_CODES = json.loads((ROOT / "assets" / "icons.json").read_text(encoding="utf-8"))
+LOGOS = json.loads((ROOT / "assets" / "logos.json").read_text(encoding="utf-8"))
 SS = 2  # supersampling for smooth rounded shapes
 
 
@@ -36,7 +37,7 @@ class Layout:
 
 
 # Vertical: content stays clear of the Shorts interface (top bar, right buttons, bottom title)
-SHORT = Layout("short", 1080, 1920, 72, 1008, 1008, 212, 268, 1120, 520, 1290, 860, 84, 96, 108)
+SHORT = Layout("short", 1080, 1920, 72, 1008, 1008, 212, 268, 1120, 520, 1330, 860, 84, 96, 108)
 LONG = Layout("long", 1920, 1080, 120, 1230, 1800, 86, 140, 790, 960, 932, 1520, 74, 86, 96,
               icon_panel=(1515, 455, 225))
 
@@ -66,6 +67,92 @@ def icon_font(size):
 
 def glyph(name):
     return chr(ICON_CODES.get(name, ICON_CODES["tool"]))
+
+
+# ---------- logos ----------
+
+def _lum(c):
+    def ch(v):
+        v /= 255
+        return v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4
+    r, g, b = c[:3]
+    return 0.2126 * ch(r) + 0.7152 * ch(g) + 0.0722 * ch(b)
+
+
+def contrast(a, b):
+    la, lb = sorted((_lum(a), _lum(b)), reverse=True)
+    return (la + 0.05) / (lb + 0.05)
+
+
+def brand_color(slug, background):
+    """The brand's color, or white/ink when it would disappear on this background."""
+    hex_ = LOGOS.get(slug, {}).get("hex", "FFFFFF")
+    color = tuple(int(hex_[i:i + 2], 16) for i in (0, 2, 4))
+    if contrast(color, background) >= 2.2:
+        return color
+    return (255, 255, 255) if _lum(background) < 0.4 else (14, 17, 22)
+
+
+@lru_cache(maxsize=64)
+def _logo_mask(slug, size):
+    """Grayscale mask cropped to the logo. Its longer side is `size`; wide wordmarks get 40% more width."""
+    info = LOGOS[slug]
+    if info["source"] == "tabler":
+        canvas = Image.new("L", (size * 2, size * 2), 0)
+        ImageDraw.Draw(canvas).text((size, size), glyph(info["glyph"]), font=icon_font(size), fill=255, anchor="mm")
+        mask = canvas
+    else:
+        mask = Image.open(ROOT / "assets" / "logos" / f"{slug}.png").convert("L")
+    box = mask.getbbox()
+    if box:
+        mask = mask.crop(box)
+    w, h = mask.size
+    target = size * (1.4 if w / max(h, 1) > 2.2 else 1.0)
+    k = target / max(w, h)
+    return mask.resize((max(1, round(w * k)), max(1, round(h * k))), Image.LANCZOS)
+
+
+def logo_image(slug, size, color):
+    """RGBA logo (cropped, longer side about `size` px) in `color`; None if the slug is unknown."""
+    if slug not in LOGOS:
+        return None
+    mask = _logo_mask(slug, size)
+    img = Image.new("RGBA", mask.size, tuple(color) + (255,))
+    img.putalpha(mask)
+    return img
+
+
+def logo_plate(slug, d, t, problem_icon=None, ring=None):
+    """A round plate (diameter d) with the logo, and an optional red problem badge at the lower right."""
+    big = Image.new("RGBA", (d * SS, d * SS), (0, 0, 0, 0))
+    pd = ImageDraw.Draw(big)
+    plate = (18, 23, 33)
+    pd.ellipse([3 * SS, 3 * SS, (d - 3) * SS, (d - 3) * SS], fill=plate + (255,), outline=ring or t["accent"], width=6 * SS)
+    img = big.resize((d, d), Image.LANCZOS)
+    size = int(d * 0.5)
+    logo = logo_image(slug, size, brand_color(slug, plate))
+    if logo:
+        img.alpha_composite(logo, ((d - logo.width) // 2, (d - logo.height) // 2))
+    if problem_icon:
+        bd = int(d * 0.36)
+        badge = Image.new("RGBA", (bd * SS, bd * SS), (0, 0, 0, 0))
+        bdraw = ImageDraw.Draw(badge)
+        bdraw.ellipse([0, 0, bd * SS - 1, bd * SS - 1], fill=t["danger"] + (255,), outline=plate + (255,), width=5 * SS)
+        badge = badge.resize((bd, bd), Image.LANCZOS)
+        ImageDraw.Draw(badge).text((bd / 2, bd / 2), glyph(problem_icon), font=icon_font(int(bd * 0.6)),
+                                   fill=(255, 255, 255), anchor="mm")
+        img.alpha_composite(badge, (d - bd - int(d * 0.02), d - bd - int(d * 0.02)))
+    return img
+
+
+def segment_logo(seg, main_logo):
+    """Which logo a segment shows: the video's brand on the problem cards, a fix's own brand if it has one."""
+    if seg.kind in ("hook", "why"):
+        return main_logo if main_logo in LOGOS else ""
+    if seg.kind == "fix":
+        own = getattr(seg, "logo", "") or ""
+        return own if own in LOGOS else ""
+    return ""
 
 
 def theme(name):
@@ -220,7 +307,7 @@ def segment_icon(seg, problem_icon):
             "avoid": "alert-triangle", "cta": "circle-check"}[seg.kind]
 
 
-def card_layer(seg, kind_label, device, theme_name, n_fixes, L=SHORT, problem_icon="tool"):
+def card_layer(seg, kind_label, device, theme_name, n_fixes, L=SHORT, problem_icon="tool", main_logo=""):
     """Full-frame RGBA layer with the card (and, horizontally, the big icon) for one segment."""
     t = theme(theme_name)
     size = L.hook_headline if seg.kind == "hook" else L.headline
@@ -259,7 +346,8 @@ def card_layer(seg, kind_label, device, theme_name, n_fixes, L=SHORT, problem_ic
             d.ellipse([(cx - r) * SS, y * SS, (cx + r) * SS, (y + 2 * r) * SS], outline=t["accent"], width=5 * SS)
             cx += 2 * r + 36
 
-    if L.icon_panel:
+    logo = segment_logo(seg, main_logo)
+    if L.icon_panel and not logo:
         cx, cy, r = L.icon_panel
         ring = t["danger"] if seg.kind == "avoid" else t["accent"]
         d.ellipse([(cx - r) * SS, (cy - r) * SS, (cx + r) * SS, (cy + r) * SS], fill=t["panel"],
@@ -309,10 +397,22 @@ def card_layer(seg, kind_label, device, theme_name, n_fixes, L=SHORT, problem_ic
         if det[0] == "numbers+text":
             d.text(((L.x0 + L.x1) / 2, det[2] + 20), seg.detail, font=font("Medium", 36), fill=t["muted"], anchor="mm")
 
-    if L.icon_panel:
+    if L.icon_panel and not logo:
         cx, cy, r = L.icon_panel
         color = t["danger"] if seg.kind == "avoid" else (t["good"] if seg.kind == "cta" else t["accent"])
         d.text((cx, cy), glyph(segment_icon(seg, problem_icon)), font=icon_font(int(r * 1.05)), fill=color, anchor="mm")
+    elif L.icon_panel and logo:
+        cx, cy, r = L.icon_panel
+        plate = logo_plate(logo, 2 * r, t, problem_icon if seg.kind == "hook" else None)
+        layer.alpha_composite(plate, (cx - r, cy - r))
+    elif logo:
+        # vertical: use the empty space between the card and the captions, when there is room
+        top = bottom + 36
+        cap_top = L.cap_cy - 100
+        dia = min(250, cap_top - top - 24)
+        if dia >= 150:
+            plate = logo_plate(logo, dia, t, problem_icon if seg.kind == "hook" else None)
+            layer.alpha_composite(plate, ((L.x0 + L.x1) // 2 - dia // 2, top + (cap_top - top - dia) // 2))
     return layer
 
 

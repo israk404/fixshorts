@@ -13,6 +13,8 @@ Total narration across all segments: {{MIN_WORDS}} to {{MAX_WORDS}} words.
 ## Other fields
 - **thumbnail_text**: 2 to 4 punchy words naming the problem, at most 28 characters, for example "WI-FI KEEPS DROPPING".
 - **icon**: the one icon that best shows the problem, chosen from this list only: {{ICONS}}
+- **logo**: the brand whose product the problem is about, as a slug from this list, or "" when no single brand fits (a general PC problem, or a brand that isn't listed): {{LOGOS}}. Use the operating system's logo (for example "windows" or "android") when the problem is about the system itself.
+- **segment "logo"** (optional, fix segments only): the brand of a tool or site that fix uses, from the same list, for example "intel" for Intel's driver tool. Leave it "" otherwise.
 - **links**: every useful link. Copy URLs exactly from the "Links found" list, or add an official one you are sure exists. "label" is a short name for the description, like "Intel driver download". "use" is true if it belongs in the description.
 - **titles**: 3 options, each at most 70 characters. Include the device or OS when it matters. Honest, no clickbait, no ALL CAPS, no emoji.
 - **description**: 2 to 5 short lines: the problem in one line, then the fixes as a numbered list. No links and no hashtags here; the app adds them.
@@ -33,10 +35,11 @@ Return only one json object, exactly in this shape (no markdown, no comments):
   "review_notes": ["anything the reviewer should double-check"],
   "thumbnail_text": "WI-FI KEEPS DROPPING",
   "icon": "wifi-off",
+  "logo": "windows",
   "segments": [
     {"kind": "hook", "headline": "", "detail": "", "narration": ""},
     {"kind": "why", "headline": "", "detail": "", "narration": ""},
-    {"kind": "fix", "headline": "", "detail": "", "narration": "... {LINK}"},
+    {"kind": "fix", "headline": "", "detail": "", "narration": "... {LINK}", "logo": ""},
     {"kind": "avoid", "headline": "", "detail": "", "narration": ""},
     {"kind": "cta", "headline": "", "detail": "", "narration": ""}
   ],

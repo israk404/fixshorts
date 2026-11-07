@@ -14,7 +14,7 @@ from fixshorts import kit
 from fixshorts.config import ROOT, editable_view, load_config, save_settings, set_env_value
 from fixshorts.jobs import BUSY, LABELS, Pipeline, Store, attention_points, open_folder
 from fixshorts.links import check_opens, classify
-from fixshorts.schema import ICONS, Script, problems, tidy
+from fixshorts.schema import ICONS, PROBLEM_ICONS, Script, problems, tidy
 
 WEB = ROOT / "web"
 app = FastAPI(title="FixShorts")
@@ -24,7 +24,7 @@ _voice_cache = {}
 _balance_cache = {"t": 0, "value": None}
 
 STAGES = ["Read", "Write", "Review", "Videos", "Done"]
-STAGE_OF = {"queued": 0, "reading": 0, "writing": 1, "review": 2, "skipped": 2,
+STAGE_OF = {"queued": 0, "reading": 0, "duplicate": 0, "writing": 1, "review": 2, "skipped": 2,
             "approved": 3, "rendering": 3, "done": 4, "failed": None}
 FILES = ("short.mp4", "video.mp4", "thumbnail.jpg", "cover.jpg", "upload.txt")
 
@@ -68,10 +68,25 @@ app.mount("/static", StaticFiles(directory=WEB), name="static")
 @app.get("/assets/{name}")
 def asset(name: str):
     allowed = {"tabler-icons.ttf": ROOT / "assets" / "fonts" / "tabler-icons.ttf",
-               "icons.json": ROOT / "assets" / "icons.json"}
+               "icons.json": ROOT / "assets" / "icons.json",
+               "logos.json": ROOT / "assets" / "logos.json"}
     if name not in allowed:
         raise HTTPException(404)
     return FileResponse(allowed[name])
+
+
+@app.get("/api/logo/{slug}")
+def logo_png(slug: str):
+    """A brand logo in its own color, sized for the review screen."""
+    import io
+    from fixshorts.cards import LOGOS, brand_color, logo_image
+
+    if slug not in LOGOS:
+        raise HTTPException(404)
+    img = logo_image(slug, 96, brand_color(slug, (255, 255, 255)))
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return Response(buf.getvalue(), media_type="image/png", headers={"Cache-Control": "max-age=86400"})
 
 
 @app.get("/files/{job_id}/{name}")
@@ -96,8 +111,8 @@ def state():
 
 @app.post("/api/links")
 def add_links(body: dict = Body(...)):
-    added, skipped = pipeline.add_links(body.get("text", ""))
-    return {"added": [j.id for j in added], "skipped": skipped}
+    added, skipped, repeats = pipeline.add_links(body.get("text", ""), bool(body.get("allow_repeats")))
+    return {"added": [j.id for j in added], "skipped": skipped, "repeats": repeats}
 
 
 @app.post("/api/sample")
@@ -187,7 +202,9 @@ def retry(job_id: str, body: dict = Body(default={})):
     if job.status in BUSY:
         raise HTTPException(409, "This job is already being worked on.")
     script = store.script(job)
-    if job.status == "failed" and script is not None and not body.get("rewrite"):
+    if job.status == "duplicate":
+        pipeline.retry(job, allow_repeat=True)  # you chose to make it anyway
+    elif job.status == "failed" and script is not None and not body.get("rewrite"):
         pipeline.approve(job)  # it failed while making videos: just try the videos again
     else:
         pipeline.retry(job, reread=bool(body.get("reread")))
@@ -233,7 +250,7 @@ def get_settings():
         "key_set": bool(key), "key_hint": f"…{key[-4:]}" if len(key) > 8 else "",
         "kokoro_available": kokoro_available(cfg),
         "models": [{"id": m, "price": p} for m, p in cfg["ai"].get("prices", {}).items()],
-        "icons": sorted(ICONS),
+        "icons": PROBLEM_ICONS,
     }
 
 

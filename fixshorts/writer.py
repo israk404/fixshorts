@@ -6,7 +6,7 @@ import re
 
 from .config import ROOT
 from .links import classify
-from .schema import ICONS, Script, problems, tidy
+from .schema import LOGOS, PROBLEM_ICONS, Script, problems, tidy
 
 PROMPTS = ROOT / "prompts"
 
@@ -16,7 +16,8 @@ def build_messages(post_text, cfg):
     task = (PROMPTS / "script_prompt.md").read_text(encoding="utf-8")
     task = task.replace("{{MIN_WORDS}}", str(cfg["script"]["min_words"]))
     task = task.replace("{{MAX_WORDS}}", str(cfg["script"]["max_words"]))
-    task = task.replace("{{ICONS}}", ", ".join(sorted(ICONS)))
+    task = task.replace("{{ICONS}}", ", ".join(PROBLEM_ICONS))
+    task = task.replace("{{LOGOS}}", ", ".join(f"{k} ({v['title']})" for k, v in LOGOS.items()))
     return [
         {"role": "system", "content": style + "\n\n" + task},
         {"role": "user", "content": "Here is the discussion:\n\n<discussion>\n" + post_text.strip()

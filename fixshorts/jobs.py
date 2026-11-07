@@ -18,6 +18,7 @@ import uuid
 from pathlib import Path
 
 from .config import ROOT, load_config
+from .history import History, post_key
 from .schema import Link, Script, problems, tidy
 
 OUTPUT = ROOT / "output"
@@ -30,6 +31,7 @@ LABELS = {
     "writing": "Writing the script",
     "review": "Ready for your review",
     "skipped": "AI skipped this post",
+    "duplicate": "Already used before",
     "approved": "Approved, waiting to make videos",
     "rendering": "Making the videos",
     "done": "Videos ready",
@@ -37,7 +39,7 @@ LABELS = {
 }
 
 FIELDS = ("id", "url", "created", "status", "message", "progress", "folder", "title", "error",
-          "cost_usd", "cost_note", "durations", "voice", "theme", "attention")
+          "cost_usd", "cost_note", "durations", "voice", "theme", "attention", "allow_repeat")
 
 
 class Job:
@@ -57,6 +59,7 @@ class Job:
         self.voice = kw.get("voice", "")
         self.theme = kw.get("theme", "")
         self.attention = kw.get("attention", [])
+        self.allow_repeat = kw.get("allow_repeat", False)
 
     def to_dict(self):
         return {k: getattr(self, k) for k in FIELDS}
@@ -93,9 +96,9 @@ class Store:
         tmp.write_text(json.dumps(job.to_dict(), indent=2), encoding="utf-8")
         os.replace(tmp, p / "job.json")
 
-    def add(self, url):
+    def add(self, url, allow_repeat=False):
         with self.lock:
-            job = Job(url=url.strip())
+            job = Job(url=url.strip(), allow_repeat=allow_repeat)
             job.folder = f"{dt.date.today():%Y-%m-%d}_job-{job.id[:6]}"
             self.jobs[job.id] = job
             self.save(job)
@@ -176,6 +179,12 @@ class Pipeline:
         self.browser_tasks = queue.Queue()
         self.reddit_state = "unknown"  # unknown, checking, logged_in, logged_out, waiting_login
         self.log_lines = []
+        self.history = History()
+        for job in store.all():
+            post = store.post(job) or {}
+            key = post_key(post.get("final_url")) or post_key(job.url)
+            if key and not self.history.get(key):
+                self.history.remember(key, job.url, job.id, job.title, when=job.created[:19])
         threading.Thread(target=self._prep_loop, daemon=True, name="prep").start()
         threading.Thread(target=self._render_loop, daemon=True, name="render").start()
         self.browser_tasks.put("check")
@@ -189,8 +198,9 @@ class Pipeline:
 
     # ---------- commands from the app ----------
 
-    def add_links(self, text):
-        added, skipped = [], []
+    def add_links(self, text, allow_repeats=False):
+        """Queue every new Reddit link. Returns (added jobs, non-Reddit links, links used before)."""
+        added, skipped, repeats, this_paste = [], [], [], set()
         for raw in text.replace(",", "\n").split():
             url = raw.strip()
             if not url:
@@ -198,16 +208,29 @@ class Pipeline:
             if "reddit.com" not in url and "redd.it" not in url:
                 skipped.append(url)
                 continue
-            added.append(self.store.add(url))
+            key = post_key(url)
+            if key and key in this_paste:
+                repeats.append({"url": url, "why": "pasted twice"})
+                continue
+            if key and self.history.get(key) and not allow_repeats:
+                repeats.append({"url": url, "why": f"already used ({self.history.describe(key)})"})
+                continue
+            if key:
+                this_paste.add(key)
+            job = self.store.add(url, allow_repeat=allow_repeats)
+            self.history.remember(key, url, job.id)
+            added.append(job)
         self.prep_wake.set()
-        return added, skipped
+        return added, skipped, repeats
 
     def add_sample(self):
         job = self.store.add("sample")
         self.prep_wake.set()
         return job
 
-    def retry(self, job, reread=False):
+    def retry(self, job, reread=False, allow_repeat=None):
+        if allow_repeat is not None:
+            self.store.update(job, allow_repeat=allow_repeat)
         if reread:
             (self.store.path(job) / "post.json").unlink(missing_ok=True)
         self.store.update(job, status="queued", error="", message="", progress=0.0)
@@ -299,6 +322,13 @@ class Pipeline:
                     post = reader.read(job.url)
                     (folder / "post.json").write_text(json.dumps(post, indent=2), encoding="utf-8")
                     self.reddit_state = "logged_in" if reader.logged_in() else self.reddit_state
+                key = post_key(post.get("final_url")) or post_key(job.url)
+                seen = self.history.get(key)
+                if seen and job.id not in seen["jobs"] and not job.allow_repeat:
+                    store.update(job, status="duplicate", title=post.get("title", "")[:120], progress=0.0,
+                                 message=f"You already used this post on {self.history.describe(key)}")
+                    return
+                self.history.remember(key, job.url, job.id, post.get("title", ""))
                 store.update(job, status="writing", message="Writing the script", title=post.get("title", "")[:120])
                 script, meter = write_script(post_to_text(post), cfg,
                                              thread_urls={l["url"] for l in post.get("links", [])},
@@ -321,6 +351,9 @@ class Pipeline:
             store.update(job, status=status, title=title[:140], cost_usd=round(job.cost_usd + cost, 5),
                          cost_note=note, attention=attention_points(script, cfg) if status == "review" else [],
                          message=script.reject_reason if status == "skipped" else "", progress=0.0, error="")
+            if job.url != "sample":
+                self.history.remember(post_key((store.post(job) or {}).get("final_url")) or post_key(job.url),
+                                      job.url, job.id, title)
             self.log(f"Prepared: {title}")
         except NeedLogin as e:
             self.reddit_state = "logged_out"
@@ -373,9 +406,10 @@ class Pipeline:
                                               message=f"{label} ({enc_name})")
 
             render_video(short_segs, script.device, script.icon, nar_short, folder, cfg, theme, cards.SHORT,
-                         "short.mp4", progress=step(0.15, 0.4, "Making the Short"), cover_name="cover.jpg")
+                         "short.mp4", progress=step(0.15, 0.4, "Making the Short"), cover_name="cover.jpg",
+                         logo=script.logo)
             render_video(long_segs, script.device, script.icon, nar_long, folder, cfg, theme, cards.LONG,
-                         "video.mp4", progress=step(0.55, 0.4, "Making the full video"))
+                         "video.mp4", progress=step(0.55, 0.4, "Making the full video"), logo=script.logo)
             store.update(job, progress=0.97, message="Making the thumbnail")
             thumbs.make_thumbnail(script, theme, cfg["thumbnail"].get("style", "bold"), folder / "thumbnail.jpg")
             durations = {"short": round(nar_short.duration, 1), "long": round(nar_long.duration, 1)}

@@ -10,6 +10,9 @@ from .config import ROOT
 Kind = Literal["hook", "why", "fix", "avoid", "cta"]
 LINK_TOKEN = "{LINK}"
 ICONS = json.loads((ROOT / "assets" / "icons.json").read_text(encoding="utf-8"))
+LOGOS = json.loads((ROOT / "assets" / "logos.json").read_text(encoding="utf-8"))
+# problem icons the AI may pick (brand glyphs are only used as logo fallbacks)
+PROBLEM_ICONS = sorted(n for n in ICONS if not n.startswith("brand-") and n != "device-nintendo")
 
 
 class Segment(BaseModel):
@@ -17,6 +20,7 @@ class Segment(BaseModel):
     headline: str
     detail: str = ""
     narration: str
+    logo: str = ""                # optional brand logo for this step (a fix that uses a brand's tool)
 
 
 class Link(BaseModel):
@@ -48,6 +52,7 @@ class Script(BaseModel):
     review_notes: list[str] = []
     thumbnail_text: str = ""
     icon: str = "tool"
+    logo: str = ""                # brand the problem is about, from assets/logos.json, or ""
     segments: list[Segment] = []
     links: list[Link] = []
     upload: Optional[Upload] = None
@@ -146,6 +151,13 @@ def tidy(script: Script) -> Script:
     """Small automatic fixes that don't need the AI: unknown icon, stray hashtags."""
     if script.icon not in ICONS:
         script.icon = "tool"
+    script.logo = script.logo.strip().lower() if script.logo else ""
+    if script.logo not in LOGOS:
+        script.logo = ""
+    for seg in script.segments:
+        seg.logo = (seg.logo or "").strip().lower()
+        if seg.logo not in LOGOS or seg.kind != "fix":
+            seg.logo = ""
     if script.upload:
         tags = [h if h.startswith("#") else "#" + h for h in script.upload.hashtags]
         script.upload.hashtags = [h for h in tags if h.lower() != "#shorts"][:4]

@@ -7,6 +7,7 @@ const BUSY = ["queued", "reading", "writing", "approved", "rendering"];
 const KIND = { hook: "Problem", why: "Why it happens", avoid: "Avoid", cta: "Your turn" };
 
 let ICONS = {};
+let LOGOS = {};
 let state = { jobs: [], reddit: "unknown", ready: 0 };
 let selected = null;
 let detail = null;
@@ -75,6 +76,7 @@ function money(v) {
 
 function shortUrl(url) {
   if (url === "sample") return "Sample post";
+  if (!url) return "";
   try {
     const u = new URL(url);
     const parts = u.pathname.split("/").filter(Boolean);
@@ -99,7 +101,7 @@ function track(job, big = false) {
     if (done || i < job.stage) cls += " done";
     else if (i === job.stage) {
       if (job.failed) cls += " fault";
-      else if (job.status === "review" || job.status === "skipped") cls += " wait";
+      else if (["review", "skipped", "duplicate"].includes(job.status)) cls += " wait";
       else cls += " now" + (["reading", "writing", "rendering"].includes(job.status) ? " busy" : "");
     }
     el.append(h("div", { class: cls }, h("i"), h("span", { text: name })));
@@ -224,6 +226,7 @@ function renderDetail() {
   else if (d.status === "done") box.append(...results(d));
   else if (d.status === "failed") box.append(...failed(d));
   else if (d.status === "skipped") box.append(...skipped(d));
+  else if (d.status === "duplicate") box.append(...duplicate(d));
   else box.append(working(d));
 }
 
@@ -264,6 +267,16 @@ function skipped(d) {
       h("button", { class: "btn danger", type: "button", onclick: removeJob }, "Delete")))];
 }
 
+function duplicate(d) {
+  return [h("div", { class: "block" },
+    h("h3", { text: "You've used this post before" }),
+    h("p", { text: d.message }),
+    h("p", { class: "muted", text: "Nothing was sent to the AI, so this cost nothing." }),
+    h("div", { class: "row" },
+      h("button", { class: "btn", type: "button", onclick: () => retry({}) }, "Make it anyway"),
+      h("button", { class: "btn danger", type: "button", onclick: removeJob }, "Delete")))];
+}
+
 // ---------- review editor ----------
 
 function editor(d) {
@@ -299,7 +312,9 @@ function editor(d) {
         h("input", { value: seg.detail, oninput: (e) => { seg.detail = e.target.value; touch(); } }),
         h("label", { text: "What the voice says" }),
         h("textarea", { rows: 3, value: seg.narration, oninput: (e) => { seg.narration = e.target.value; count.textContent = `${words(seg.narration)} words`; touch(); updateTotal(); } }),
-        count)));
+        count,
+        seg.kind === "fix" ? h("label", { text: "Logo for this step (optional, for a fix that uses a brand's tool or site)" }) : null,
+        seg.kind === "fix" ? logoPicker(seg.logo || "", (v) => { seg.logo = v; touch(); }) : null)));
   });
   out.push(h("div", { class: "block" },
     h("h3", { text: "Script" }),
@@ -318,13 +333,16 @@ function editor(d) {
   const setGlyph = () => (glyph.textContent = ICONS[s.icon] ? String.fromCodePoint(ICONS[s.icon]) : "");
   setGlyph();
   const iconSel = h("select", { onchange: (e) => { s.icon = e.target.value; setGlyph(); touch(); } },
-    Object.keys(ICONS).sort().map((n) => h("option", { value: n, text: n.replace(/-/g, " "), selected: n === s.icon ? "selected" : null })));
+    Object.keys(ICONS).filter((n) => !n.startsWith("brand-") && n !== "device-nintendo").sort()
+      .map((n) => h("option", { value: n, text: n.replace(/-/g, " "), selected: n === s.icon ? "selected" : null })));
   out.push(h("div", { class: "block" },
     h("h3", { text: "Thumbnail" }),
     h("div", { class: "thumb-edit" },
       h("div", {}, h("label", { text: "Big words (2 to 4)" }),
         h("input", { value: s.thumbnail_text, maxlength: 28, oninput: (e) => { s.thumbnail_text = e.target.value; touch(); } })),
-      h("div", {}, h("label", { text: "Icon" }), h("div", { class: "icon-pick" }, glyph, iconSel)))));
+      h("div", {}, h("label", { text: "Problem icon" }), h("div", { class: "icon-pick" }, glyph, iconSel))),
+    h("label", { text: "Brand logo (thumbnail, problem cards and the full video's side panel)" }),
+    logoPicker(s.logo || "", (v) => { s.logo = v; touch(); })));
 
   // Upload details
   const u = s.upload;
@@ -353,6 +371,17 @@ function editor(d) {
 
   setTimeout(() => { renderLinks(); updateTotal(); }, 0);
   return out;
+}
+
+function logoPicker(current, onPick) {
+  const img = h("img", { class: "logo-preview", alt: "" });
+  const show = (slug) => { img.hidden = !slug; if (slug) img.src = `/api/logo/${slug}`; };
+  const sel = h("select", { onchange: (e) => { show(e.target.value); onPick(e.target.value); } },
+    h("option", { value: "", text: "No logo" }),
+    Object.entries(LOGOS).sort((a, b) => a[1].title.localeCompare(b[1].title))
+      .map(([slug, info]) => h("option", { value: slug, text: info.title, selected: slug === current ? "selected" : null })));
+  show(current);
+  return h("div", { class: "logo-pick" }, h("span", { class: "logo-box" }, img), sel);
 }
 
 function rulesView(problems) {
@@ -640,16 +669,23 @@ async function previewVoice() {
 
 async function init() {
   try { ICONS = await api("GET", "/assets/icons.json"); } catch (e) { ICONS = {}; }
+  try { LOGOS = await api("GET", "/assets/logos.json"); } catch (e) { LOGOS = {}; }
   $$("[data-icon]").forEach((el) => { if (ICONS[el.dataset.icon]) el.textContent = String.fromCodePoint(ICONS[el.dataset.icon]); });
 
   $("#add").addEventListener("click", async () => {
     const text = $("#links").value;
     if (!text.trim()) { $("#add-note").textContent = "Paste at least one Reddit link first."; return; }
     try {
-      const res = await api("POST", "/api/links", { text });
+      const res = await api("POST", "/api/links", { text, allow_repeats: $("#allow-repeats").checked });
       $("#links").value = "";
-      $("#add-note").textContent = `Added ${res.added.length} link${res.added.length === 1 ? "" : "s"}.` +
-        (res.skipped.length ? ` Skipped ${res.skipped.length} that weren't Reddit links.` : "");
+      $("#allow-repeats").checked = false;
+      const note = $("#add-note");
+      note.replaceChildren(`Added ${res.added.length} link${res.added.length === 1 ? "" : "s"}.` +
+        (res.skipped.length ? ` Skipped ${res.skipped.length} that weren't Reddit links.` : ""));
+      if (res.repeats.length) {
+        note.append(h("span", { class: "repeat-head", text: ` Skipped ${res.repeats.length} you've used before:` }),
+          h("ul", { class: "repeats" }, res.repeats.map((r) => h("li", { text: `${shortUrl(r.url)}, ${r.why}` }))));
+      }
       if (res.added.length && !selected) select(res.added[0]);
       poll();
     } catch (e) { $("#add-note").textContent = e.message; }

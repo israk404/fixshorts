@@ -19,11 +19,13 @@ Paste Reddit links about PC, phone and tech problems. FixShorts reads each post,
 ## Daily use
 
 1. **Paste links**, one per line, and press **Add to queue**. Each link is read and scripted in turn. Nothing is made into a video yet.
+
+   A post you've used before is skipped, even months later and even if you deleted that job. The app matches posts by Reddit's post ID, so www., old., mobile, redd.it and share links all count as the same post (share links are checked once the page opens, before any AI cost). To make one again on purpose, tick **Allow links I've used before**, or press **Make it anyway** on the job.
 2. **Review** each job marked gold ("Ready for your review"). You see:
    - what the AI says: its confidence, risks the video mentions, notes for you, and a rule check
    - the script, segment by segment: on-screen headline, small on-screen text, and what the voice says
    - links for the description, each marked Official site or Check this site, and whether it opens
-   - thumbnail words and icon, titles, description, tags, hashtags and pinned comment
+   - thumbnail words, problem icon and brand logo, titles, description, tags, hashtags and pinned comment
 
    Edit anything, then press **Save changes**. **Write again** asks the AI for a new script.
 3. Press **Approve and make videos**, or **Approve all ready** for the whole batch. Videos are made one job at a time.
@@ -45,6 +47,14 @@ Each job's files are in `output\<date>_<topic>\`:
 ## Cost
 
 Scripts use `deepseek-flash` with low thinking, about a quarter of a US cent per link off-peak. The top bar shows your DeepSeek balance. DeepSeek doubles its prices on weekdays from 07:00 to 10:00 and 12:00 to 16:00 Bangladesh time; the top bar warns you during those hours. You can switch to `deepseek-v4-pro` in Settings for better scripts at about 4 times the cost.
+
+## Logos
+
+When a problem is about one brand (Windows, Chrome, iPhone, Samsung, WhatsApp...), the AI picks its logo. It appears on the thumbnail, on the problem cards (with a small red badge showing the problem), and in the full video's side panel. A fix that uses a brand's own tool or site (an Intel driver tool, say) can show that brand's logo too. You can change or remove any logo in review.
+
+About 140 tech brands are bundled in `assets/logos`, from [Simple Icons](https://simpleicons.org) (CC0). Microsoft, Amazon, Adobe and a few others asked Simple Icons to remove their logos, so for those (Windows, Edge, Office, Xbox, Teams and more) the app uses simple outline icons from Tabler Icons instead. Logos are trademarks of their owners and are shown only to identify the product a video is about. To add brands, see `tools/build_logos.py`.
+
+The videos don't use stock photos: free photo services can't reliably leave out people, and text cards with icons and logos already carry these videos.
 
 ## Voices
 
@@ -79,7 +89,7 @@ Most settings are in the app. Advanced defaults live in `config.toml`; what you 
 
 `app.py` serves the app and runs two background workers (`fixshorts/jobs.py`):
 
-- **Prep worker:** `extract.py` reads the Reddit page in the app's own browser, `writer.py` writes the script with DeepSeek, `schema.py` checks it (no Reddit mentions, no AI-sounding phrases, length, structure), and `links.py` rates and tests each link.
+- **Prep worker:** `history.py` skips posts you've used before, `extract.py` reads the Reddit page in the app's own browser, `writer.py` writes the script with DeepSeek, `schema.py` checks it (no Reddit mentions, no AI-sounding phrases, length, structure), and `links.py` rates and tests each link.
 - **Video worker:** after you approve, `tts_edge.py` records the voice with exact word timings, `cards.py` and `render.py` draw and encode both videos with FFmpeg (Intel Quick Sync when available), `thumbs.py` makes the thumbnail, and `kit.py` writes the upload details.
 
 Fonts and icons: Poppins (SIL Open Font License) and Tabler Icons (MIT), in `assets/fonts`. Offline voice: Kokoro-82M (Apache 2.0).

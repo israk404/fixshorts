@@ -249,3 +249,14 @@ legend { font-weight: 700; padding: 0 0 4px; }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+.inline-check { display: flex; align-items: center; gap: 8px; font-weight: 500; font-size: .86rem; color: var(--muted); margin: 8px 0 0; }
+.inline-check input { width: auto; accent-color: var(--trace); }
+.repeats { margin: 6px 0 0; padding-left: 1.2em; color: var(--muted); }
+.repeat-head { color: #7a5506; font-weight: 600; }
+.job.duplicate .meta .state { color: var(--solder); }
+
+.logo-pick { display: flex; gap: 8px; align-items: center; }
+.logo-pick select { max-width: 320px; }
+.logo-box { width: 44px; height: 44px; flex-shrink: 0; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.logo-preview { max-width: 32px; max-height: 32px; display: block; }
