@@ -104,7 +104,9 @@ def _time_words(shown, weights, audio, sr):
     return times
 
 
-class Voice:
+class KokoroVoice:
+    name = "Kokoro (offline)"
+
     def __init__(self, cfg):
         from kokoro_onnx import Kokoro
 
@@ -141,8 +143,8 @@ class Voice:
         )
         return np.asarray(samples, dtype=np.float32), sr
 
-    def narrate(self, segments, speed=None, log=print) -> Narration:
-        speed = speed or self.cfg["speed"]
+    def narrate(self, segments, faster=1.0, log=print) -> Narration:
+        speed = self.cfg["speed"] * faster
         sr = 24000
         chunks, words, spans = [], [], []
         t = 0.0
@@ -173,10 +175,37 @@ class Voice:
             spans.append((seg_start, t))
             if si < len(segments) - 1:
                 silence(self.cfg["segment_pause"])
-            log(f"  voiced {si + 1}/{len(segments)}: {seg.kind}")
         silence(self.cfg["tail"])
 
         audio = np.concatenate(chunks)
         peak = float(np.max(np.abs(audio))) or 1.0
         audio = audio * (0.89 / peak)  # about -1 dB peak; loudness is evened out at the final mix
         return Narration(audio, sr, words, spans)
+
+
+def kokoro_available(cfg):
+    v = cfg["voice"]
+    return (ROOT / v["model"]).exists() and (ROOT / v["voices"]).exists()
+
+
+def make_voice(cfg):
+    """The voice engine chosen in Settings (Edge by default)."""
+    if cfg["voice"].get("engine", "edge") == "kokoro":
+        if not kokoro_available(cfg):
+            raise RuntimeError("The offline voice isn't installed. Run setup_models.py, or pick Edge in Settings.")
+        return KokoroVoice(cfg)
+    from .tts_edge import EdgeVoice
+    return EdgeVoice(cfg)
+
+
+def narrate_with_fallback(cfg, segments, faster=1.0, log=print):
+    """Edge first; if it fails (no internet, service change) use the offline voice when it's installed."""
+    voice = make_voice(cfg)
+    try:
+        return voice.narrate(segments, faster=faster, log=log), voice.name
+    except Exception as e:
+        if voice.name.startswith("Kokoro") or not kokoro_available(cfg):
+            raise RuntimeError(f"{voice.name} failed: {e}") from e
+        log(f"Edge voice failed ({str(e)[:120]}), using the offline voice instead")
+        backup = KokoroVoice(cfg)
+        return backup.narrate(segments, faster=faster, log=log), backup.name

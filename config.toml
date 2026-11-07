@@ -1,53 +1,60 @@
-# FixShorts settings. Edit freely; every run reads this file.
+# FixShorts defaults. Most of these can be changed in the app (Settings);
+# changes made there are saved to settings.json and win over this file.
 
 [ai]
-# Any OpenAI-compatible API works. Default: DeepSeek.
+# Any OpenAI-compatible API works. Default: DeepSeek's cheap model.
 base_url = "https://api.deepseek.com"
-# The best model writes each script. To spend about 4x less, use "deepseek-flash" here too.
-model = "deepseek-v4-pro"
-# Cheaper model for fixing rule breaks (wrong length, missing segment). Leave "" to use `model`.
-repair_model = "deepseek-flash"
+model = "deepseek-flash"
+# Model used to fix a draft that breaks a rule. "" = same as `model`.
+repair_model = ""
 # Name of the environment variable (or line in the .env file) holding your key.
 api_key_env = "DEEPSEEK_API_KEY"
-# DeepSeek thinking: "low", "high" or "max". Leave "" for providers that don't support it.
-reasoning_effort = "high"
+# DeepSeek thinking: "low", "high" or "max". "low" is cheapest. "" for providers without it.
+reasoning_effort = "low"
 # Ignored by DeepSeek in thinking mode; used by other providers.
 temperature = 0.7
 # Room for the model's thinking plus the JSON answer.
-max_tokens = 12000
+max_tokens = 8000
 # Ask the API for strict JSON. Set false if a provider rejects it.
 json_mode = true
 # How many times to ask the AI to fix a script that breaks the rules.
 max_attempts = 3
 
-# Cost estimates printed after each script. USD per 1M tokens at off-peak rates.
-# DeepSeek charges 2x during peak hours (weekdays, UTC). Check platform.deepseek.com if prices change.
+# Cost estimates. USD per 1M tokens at off-peak rates; DeepSeek charges 2x at peak (weekdays, UTC).
 peak_hours_utc = [[1, 4], [6, 10]]
 peak_multiplier = 2.0
 [ai.prices]
-"deepseek-v4-pro" = { cache_hit = 0.022, cache_miss = 0.66, output = 1.98 }
 "deepseek-flash" = { cache_hit = 0.003, cache_miss = 0.15, output = 0.60 }
+"deepseek-v4-pro" = { cache_hit = 0.022, cache_miss = 0.66, output = 1.98 }
 
-# Other providers: change base_url, model, api_key_env, set repair_model = "" and
-# reasoning_effort = "", set peak_hours_utc = [], then put that key in .env
-#   Gemini:       base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
-#                 model = "gemini-2.5-flash"     api_key_env = "GEMINI_API_KEY"
-#   OpenAI:       base_url = "https://api.openai.com/v1"        model = "gpt-5-mini"           api_key_env = "OPENAI_API_KEY"
-#                 (GPT-5 models only accept the default temperature: also set temperature = 1)
-#   Groq (free):  base_url = "https://api.groq.com/openai/v1"   model = "openai/gpt-oss-120b"  api_key_env = "GROQ_API_KEY"
-#   OpenRouter:   base_url = "https://openrouter.ai/api/v1"     model = "openai/gpt-5-mini"    api_key_env = "OPENROUTER_API_KEY"
-#                 (any model on openrouter.ai works: copy its ID from the model page)
+# Other providers: change base_url, model and api_key_env, set reasoning_effort = ""
+# and peak_hours_utc = [], then put that key in .env
+#   Gemini:      base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"  model = "gemini-2.5-flash"  api_key_env = "GEMINI_API_KEY"
+#   OpenAI:      base_url = "https://api.openai.com/v1"       model = "gpt-5-mini"   api_key_env = "OPENAI_API_KEY"  (also set temperature = 1)
+#   Groq (free): base_url = "https://api.groq.com/openai/v1"  model = "openai/gpt-oss-120b"  api_key_env = "GROQ_API_KEY"
 
 [script]
 min_words = 100
 max_words = 145
 
+[browser]
+# Browser the app uses to read Reddit pages: "msedge" (built into Windows) or "chrome".
+channel = "msedge"
+# Show the browser window while reading pages (less likely to be blocked).
+show = true
+# Where the app keeps its own browser profile (your Reddit login lives here).
+profile = "data/browser-profile"
+
 [voice]
+# "edge" = free Microsoft Edge voices (needs internet). "kokoro" = offline voice (run setup_models.py first).
+# If Edge fails and the Kokoro files exist, Kokoro is used automatically.
+engine = "edge"
+edge_voice = "en-US-AndrewNeural"
+# Speaking speed for Edge voices, e.g. "+0%", "+10%", "-5%"
+edge_rate = "+5%"
+# Kokoro (offline) settings
 model = "models/kokoro-v1.0.onnx"
 voices = "models/voices-v1.0.bin"
-# American male: am_michael, am_adam, am_eric, am_liam, am_onyx
-# American female: af_heart, af_bella, af_nicole, af_sarah
-# British: bm_george, bm_lewis, bf_emma, bf_isabella
 voice = "am_michael"
 speed = 1.1
 lang = "en-us"
@@ -57,11 +64,9 @@ sentence_pause = 0.22
 segment_pause = 0.35
 tail = 0.7
 
-# Words the voice gets wrong. Left side = what's written, right side = what's spoken.
-# Captions still show the left side.
+# Kokoro only: words it says wrong. Left = written (shown in captions), right = spoken.
 [pronounce]
 "SSD" = "S S D"
-"SSDs" = "S S Ds"
 "HDD" = "H D D"
 "GPU" = "G P U"
 "CPU" = "C P U"
@@ -74,7 +79,6 @@ tail = 0.7
 "macOS" = "mac O S"
 "iCloud" = "eye cloud"
 "PC" = "P C"
-"PCs" = "P Cs"
 "OS" = "O S"
 "HDMI" = "H D M I"
 "Wi-Fi" = "wifi"
@@ -85,18 +89,23 @@ tail = 0.7
 "RAM" = "ram"
 
 [video]
-width = 1080
-height = 1920
 fps = 30
-# Shorts longer than this get spoken a little faster (up to 15%), then a warning.
+# Shorts longer than this get spoken a little faster (up to 15%).
 max_seconds = 58
 # "auto" tries Intel Quick Sync first, then falls back to the CPU (x264).
 encoder = "auto"
-# Color theme: "auto" rotates per video, or pick: cyan, lime, amber, violet
+# Color theme: "auto" rotates per video, or: cyan, lime, amber, violet
 theme = "auto"
-# Small channel name on screen. Leave empty for none.
+# Small channel name on screen. Empty = none.
 channel_name = ""
-# Path to ffmpeg.exe if it's not on PATH
+# Path to ffmpeg.exe if it's not on PATH (the app also checks the winget install folder)
 ffmpeg = "ffmpeg"
-# Keep the per-scene files after a successful render (for debugging)
 keep_work_files = false
+
+[thumbnail]
+# "bold", "split" or "clean"
+style = "bold"
+
+[app]
+port = 8765
+open_browser = true

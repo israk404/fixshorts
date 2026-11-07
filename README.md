@@ -1,90 +1,85 @@
 # FixShorts
 
-Turns a PC, phone or tech-fix post from Reddit into a finished YouTube Short (1080×1920, voice-over and word-by-word captions, no music) plus a ready-to-paste upload kit. Everything runs on your Windows PC; the only thing that goes online is the AI call that writes the script.
+Paste Reddit links about PC, phone and tech problems. FixShorts reads each post, has DeepSeek write a direct problem-and-solution script, waits for your review, then makes two videos (a vertical Short and a horizontal full video), a thumbnail, and ready-to-paste upload details. It runs on your Windows PC; only the AI script and the Edge voice go online.
 
-![Six frames from the sample Short: the problem card, fix cards with menu paths, and the closing question](docs/preview.jpg)
+![Frames from a Short, the full video and its thumbnail](docs/preview.jpg)
 
-## One-time setup (about 15 minutes)
+![The review screen: what the AI says, the editable script, links and upload details](docs/app.jpg)
 
-1. **Python 3.12** from [python.org](https://www.python.org/downloads/windows/). During install, tick **Add python.exe to PATH**.
-2. **FFmpeg** (full build, includes Intel Quick Sync). In PowerShell:
-   ```
-   winget install Gyan.FFmpeg
-   ```
-   Close and reopen PowerShell afterwards, then check with `ffmpeg -version`.
-3. **This project.** Unzip it anywhere (for example `C:\fixshorts`), then in PowerShell:
-   ```
-   cd C:\fixshorts
-   python -m venv .venv
-   .venv\Scripts\activate
-   pip install -r requirements.txt
-   python setup_models.py
-   ```
-   The last command downloads the voice model (about 350 MB, once).
-4. **AI key.** Create a key at [platform.deepseek.com](https://platform.deepseek.com) (API keys) and add a little balance. Copy `.env.example` to `.env` and paste the key after `DEEPSEEK_API_KEY=`. Never commit `.env`; it's already in `.gitignore`.
+## Set up (once)
 
-Every new PowerShell session, run `.venv\Scripts\activate` inside the folder first.
-
-## Test it without a key
-
-```
-python run.py all input\sample_post.txt --script input\sample_script.json
-```
-This skips the AI and renders the included sample script, so you can check the voice, look and speed on your PC. It takes about a minute.
+1. Install **Python 3.12** from [python.org](https://www.python.org/downloads/windows/). During the install, tick **Add python.exe to PATH**.
+2. Download this project (Code → Download ZIP, or `git clone https://github.com/israk404/fixshorts`) and unzip it somewhere like `C:\fixshorts`.
+3. Double-click **setup.bat**. It installs the Python packages and, if needed, FFmpeg through winget. Takes a few minutes.
+4. Double-click **start.bat**. The app opens in your browser at http://127.0.0.1:8765. Keep the black window open while you use it.
+5. In **Settings**:
+   - Paste your DeepSeek API key (from [platform.deepseek.com](https://platform.deepseek.com)) and press Save key.
+   - Press **Log in to Reddit**. A browser window opens; log in with a spare Reddit account. The window closes by itself when you're done, and the app remembers the login in its own browser profile (it never touches your normal browser).
 
 ## Daily use
 
-1. **Save a post.** Open a Reddit post, copy the title, the post text and the top comments (with upvote numbers if you can) into a new text file in `input\`, for example `input\wifi-drops.txt`. The format doesn't need to be neat; look at `input\sample_post.txt` for an example.
-2. **Write the script.**
-   ```
-   python run.py write input\wifi-drops.txt
-   ```
-   It prints the confidence, risk flags and review notes, and creates `output\<date>_<topic>\`.
-3. **Review.** Read `script.md` in that folder. To change anything (a headline, a sentence, a fix), edit `script.json` in the same folder and save.
-4. **Render.**
-   ```
-   python run.py render "output\2026-11-08_laptop-wifi-keeps-dropping"
-   ```
-5. **Upload.** In the folder: `video.mp4` is the Short, `upload.txt` has the titles, description, tags, hashtags and pinned comment to paste into YouTube Studio. `cover.png` is the first frame if you want it as the Shorts cover.
+1. **Paste links**, one per line, and press **Add to queue**. Each link is read and scripted in turn. Nothing is made into a video yet.
+2. **Review** each job marked gold ("Ready for your review"). You see:
+   - what the AI says: its confidence, risks the video mentions, notes for you, and a rule check
+   - the script, segment by segment: on-screen headline, small on-screen text, and what the voice says
+   - links for the description, each marked Official site or Check this site, and whether it opens
+   - thumbnail words and icon, titles, description, tags, hashtags and pinned comment
 
-Shortcut: `python run.py all input\wifi-drops.txt` writes and renders in one go, skipping the review stop.
+   Edit anything, then press **Save changes**. **Write again** asks the AI for a new script.
+3. Press **Approve and make videos**, or **Approve all ready** for the whole batch. Videos are made one job at a time.
+4. When a job shows **Videos ready**, open it to play both videos, copy each upload field, or open the folder.
 
-To check the look of a script quickly without rendering: `python run.py preview "output\<folder>"` saves one still per card into `preview\`.
+**Uploading:** upload the full video first (`video.mp4` with `thumbnail.jpg`), then the Short (`short.mp4`). In YouTube Studio, set the Short's **Related video** to the full video. Links in Shorts descriptions aren't clickable, so the Short tells viewers the links are in the full video.
 
-## AI model and cost
+Each job's files are in `output\<date>_<topic>\`:
 
-Scripts are written by DeepSeek. `deepseek-v4-pro`, the best model, writes each first draft. If the draft breaks a rule (too long, a missing segment), the cheaper `deepseek-flash` fixes it. Every `write` prints the tokens used and an estimated cost, usually around 1 to 2 US cents per script off-peak.
-
-DeepSeek doubles its prices on weekdays from 07:00 to 10:00 and 12:00 to 16:00 Bangladesh time (01:00–04:00 and 06:00–10:00 UTC). The script tells you when you're in that window and when it ends; weekends are always off-peak.
-
-To make your balance last about 4 times longer, set `model = "deepseek-flash"` in `config.toml`.
-
-## Changing things (config.toml)
-
-| What | Setting |
+| File | What it is |
 |---|---|
-| Voice | `[voice] voice` (try `af_heart`, `am_adam`, `bm_george`) |
-| Speaking speed | `[voice] speed` (1.1 default) |
-| A word the voice says wrong | add a line under `[pronounce]` |
-| Script length | `[script] min_words` / `max_words` |
-| Color theme | `[video] theme` (`auto` rotates: cyan, lime, amber, violet) |
-| Channel name on screen | `[video] channel_name` |
-| Cheaper or stronger AI | `[ai] model` (`deepseek-v4-pro` or `deepseek-flash`) and `reasoning_effort` (`low`, `high`, `max`) |
-| Different AI provider | `[ai]` section (Gemini, OpenAI, Groq and OpenRouter examples included) |
+| `video.mp4` | Full video, 1920×1080 |
+| `short.mp4` | Short, 1080×1920 |
+| `thumbnail.jpg` | Thumbnail for the full video (1280×720) |
+| `cover.jpg` | First frame of the Short, if you want a cover |
+| `upload.txt` | Titles, descriptions, tags and pinned comment for both videos |
+| `script.json` | The script as you approved it |
 
-The channel's voice and the accuracy rules live in `prompts\style_guide.md`, and the script structure in `prompts\script_prompt.md`. Editing those is the best way to change how the scripts sound.
+## Cost
 
-## How it works
+Scripts use `deepseek-flash` with low thinking, about a quarter of a US cent per link off-peak. The top bar shows your DeepSeek balance. DeepSeek doubles its prices on weekdays from 07:00 to 10:00 and 12:00 to 16:00 Bangladesh time; the top bar warns you during those hours. You can switch to `deepseek-v4-pro` in Settings for better scripts at about 4 times the cost.
 
-`run.py` → `writer.py` (AI script, checked against the rules in `schema.py`, sent back to the AI up to 3 times if it breaks them) → `voice.py` (Kokoro on your CPU; each sentence is voiced separately so captions stay in sync) → `cards.py` + `render.py` (Pillow draws the cards, FFmpeg encodes one file per card using Quick Sync if available, joins them, adds the voice at YouTube's -14 LUFS loudness) → `kit.py` (upload.txt and script.md).
+## Voices
+
+The default is Microsoft Edge's free voices (Andrew, Brian, Ava, Emma and more; pick one and press **Play sample** in Settings). They need internet. They come through the unofficial `edge-tts` library, so Microsoft could change or limit them at any time.
+
+As a backup, install the offline Kokoro voice once: open a terminal in the folder and run `.venv\Scripts\python.exe setup_models.py` (downloads about 350 MB). After that, if Edge ever fails, the app switches to the offline voice by itself, and you can also choose it in Settings.
+
+## Settings
+
+Most settings are in the app. Advanced defaults live in `config.toml`; what you change in the app is saved to `settings.json` and wins over `config.toml`.
+
+| What | Where |
+|---|---|
+| DeepSeek key, model, thinking level | Settings → DeepSeek |
+| Voice and speed | Settings → Voice |
+| Thumbnail style (bold, problem/fixed, clean), video colors, channel name | Settings → Look |
+| Reddit login, browser (Edge or Chrome) | Settings → Reddit |
+| Script length | Settings → Script length |
+| Channel voice and accuracy rules for the AI | `prompts\style_guide.md` |
+| Script structure | `prompts\script_prompt.md` |
+| Other AI providers (Gemini, OpenAI, Groq) | `config.toml`, `[ai]` section |
 
 ## Troubleshooting
 
-- **`ffmpeg` is not recognized**: reopen PowerShell after installing, or put the full path to `ffmpeg.exe` in `config.toml` under `[video] ffmpeg`.
-- **"Quick Sync isn't available"**: rendering falls back to the CPU automatically. Updating the Intel graphics driver usually enables Quick Sync.
-- **Video over 58 seconds**: the voice is sped up by up to 15% automatically. Beyond that you'll get a warning; trim the script in `script.json`.
-- **AI errors about `response_format`**: set `json_mode = false` in `config.toml`.
-- **"reply was cut off"**: raise `max_tokens` under `[ai]`, or set `reasoning_effort = "low"`.
-- **"Insufficient Balance" from DeepSeek**: top up at platform.deepseek.com.
+- **"Reddit wants you to log in"**: Settings → Log in to Reddit. Jobs that failed only because of the login start again automatically.
+- **"Couldn't open Edge or Chrome"**: close any window the app opened earlier, or pick the other browser in Settings.
+- **"Edge voice didn't answer"**: check your internet. If the offline voice is installed, the app uses it instead.
+- **"FFmpeg isn't installed"**: run `winget install Gyan.FFmpeg` in a terminal, then restart the app.
+- **The page doesn't open**: another program may be using port 8765. Change `port` under `[app]` in `config.toml`.
 
-Fonts: Poppins, under the SIL Open Font License (`assets\fonts\OFL.txt`). Voice model: Kokoro-82M (Apache 2.0).
+## How it works
+
+`app.py` serves the app and runs two background workers (`fixshorts/jobs.py`):
+
+- **Prep worker:** `extract.py` reads the Reddit page in the app's own browser, `writer.py` writes the script with DeepSeek, `schema.py` checks it (no Reddit mentions, no AI-sounding phrases, length, structure), and `links.py` rates and tests each link.
+- **Video worker:** after you approve, `tts_edge.py` records the voice with exact word timings, `cards.py` and `render.py` draw and encode both videos with FFmpeg (Intel Quick Sync when available), `thumbs.py` makes the thumbnail, and `kit.py` writes the upload details.
+
+Fonts and icons: Poppins (SIL Open Font License) and Tabler Icons (MIT), in `assets/fonts`. Offline voice: Kokoro-82M (Apache 2.0).

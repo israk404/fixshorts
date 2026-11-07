@@ -1,49 +1,80 @@
-"""Writes the human-readable files: script.md for review and upload.txt for YouTube Studio."""
+"""Per-format script text, and the upload details for both videos."""
+from .schema import LINK_TOKEN, Segment
+
+LINK_LINES = {
+    "long": ("The link is in the description.", "The links are in the description."),
+    "short": ("The link is in the full video.", "The links are in the full video."),
+}
 
 
-def script_markdown(script, word_count=None, duration=None):
-    lines = [f"# {script.slug}", ""]
-    lines.append(f"- Verdict: **{script.verdict}**" + (f" ({script.reject_reason})" if script.reject_reason else ""))
-    lines.append(f"- Device: {script.device or '-'}")
-    lines.append(f"- Confidence: **{script.confidence}**")
-    lines.append(f"- Words: {word_count or script.word_count()}" + (f", about {duration:.0f} s" if duration else ""))
-    if script.risk_flags:
-        lines += ["", "## Risk flags (check these)"] + [f"- {f}" for f in script.risk_flags]
-    if script.review_notes:
-        lines += ["", "## Review notes"] + [f"- {n}" for n in script.review_notes]
-    lines += ["", "## Script"]
-    fix = 0
-    for seg in script.segments:
-        if seg.kind == "fix":
-            fix += 1
-        name = f"FIX {fix}" if seg.kind == "fix" else seg.kind.upper()
-        lines += ["", f"### {name}: {seg.headline}"]
-        if seg.detail:
-            lines.append(f"_On screen:_ {seg.detail}")
-        lines.append("")
-        lines.append(seg.narration)
-    lines += ["", "To change anything, edit script.json (not this file), then run the render command again.", ""]
-    return "\n".join(lines)
+def format_segments(script, fmt):
+    """Copy of the segments with {LINK} turned into the right sentence for this video."""
+    n_links = len(script.used_links())
+    one, many = LINK_LINES[fmt]
+    line = many if n_links > 1 else one
+    out = []
+    for s in script.segments:
+        text = s.narration
+        if LINK_TOKEN in text:
+            text = text.replace(LINK_TOKEN, line if n_links else "")
+        out.append(Segment(kind=s.kind, headline=s.headline, detail=s.detail, narration=" ".join(text.split())))
+    return out
 
 
-def upload_text(script, duration):
+def title(script):
     u = script.upload
-    if u is None:
-        return "No upload details: this script was rejected.\n"
-    out = ["TITLE (pick one, paste into Title)"]
-    out += [f"  {i}. {t}" for i, t in enumerate(u.titles, 1)]
-    out += ["", "DESCRIPTION (paste into Description)", "-" * 40, u.description.strip()]
+    if not u or not u.titles:
+        return script.slug
+    return u.titles[min(max(script.title_choice, 0), len(u.titles) - 1)]
+
+
+def long_description(script):
+    u = script.upload
+    parts = [u.description.strip()]
+    links = script.used_links()
+    if links:
+        parts.append("Links:\n" + "\n".join(f"{l.label or 'Link'}: {l.url}" for l in links))
     if u.hashtags:
-        out += ["", " ".join(u.hashtags)]
-    out += ["-" * 40, "", "TAGS (paste into Tags, under Show more)", ", ".join(u.tags)]
-    out += ["", "PINNED COMMENT (post it, then pin it)", u.pinned_comment]
-    out += ["", "STUDIO SETTINGS",
-            "  Audience: No, it's not made for kids",
-            f"  Category: Howto & Style  (or Science & Technology)",
-            f"  Length: {duration:.0f} seconds"]
-    out += ["", "BEFORE YOU PUBLISH", f"  Confidence: {script.confidence}"]
-    out += [f"  Check: {f}" for f in script.risk_flags]
-    out += [f"  Note: {n}" for n in script.review_notes]
-    if script.source.url or script.source.subreddit:
-        out += ["", f"SOURCE (for your records): {script.source.subreddit} {script.source.url}".rstrip()]
+        parts.append(" ".join(u.hashtags))
+    return "\n\n".join(parts)
+
+
+def short_description(script):
+    u = script.upload
+    parts = [u.description.strip()]
+    n = len(script.used_links())
+    if n:
+        parts.append(("The links are" if n > 1 else "The link is") + " in the full video on my channel.")
+    parts.append(" ".join(["#shorts"] + u.hashtags))
+    return "\n\n".join(parts)
+
+
+def upload_fields(script):
+    """Everything the app shows with copy buttons, for both videos."""
+    u = script.upload
+    return {
+        "long": {"title": title(script), "description": long_description(script),
+                 "tags": ", ".join(u.tags), "pinned_comment": u.pinned_comment},
+        "short": {"title": title(script), "description": short_description(script),
+                  "tags": ", ".join(u.tags), "pinned_comment": u.pinned_comment},
+    }
+
+
+def upload_text(script, durations):
+    f = upload_fields(script)
+    out = []
+    for key, name, file in (("long", "FULL VIDEO (16:9)", "video.mp4"), ("short", "SHORT (9:16)", "short.mp4")):
+        d = f[key]
+        out += [f"===== {name}: {file} =====", "",
+                "TITLE", d["title"], "",
+                "DESCRIPTION", d["description"], "",
+                "TAGS", d["tags"], "",
+                "PINNED COMMENT", d["pinned_comment"], ""]
+        if key == "long":
+            out += ["THUMBNAIL: thumbnail.jpg", f"LENGTH: {durations.get('long', 0):.0f} seconds", ""]
+        else:
+            out += ["COVER: pick the first frame (or upload cover.jpg)",
+                    "RELATED VIDEO: after both are uploaded, set the Short's Related video to the full video",
+                    f"LENGTH: {durations.get('short', 0):.0f} seconds", ""]
+    out += ["Audience: No, it's not made for kids", "Category: Howto & Style (or Science & Technology)"]
     return "\n".join(out) + "\n"

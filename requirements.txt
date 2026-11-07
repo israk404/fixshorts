@@ -1,7 +1,12 @@
-kokoro-onnx>=0.6.1
-onnxruntime>=1.18
-soundfile>=0.12
-numpy>=1.26
-Pillow>=10.1
+fastapi>=0.110
+uvicorn>=0.29
+playwright>=1.45
+edge-tts>=7.2
 openai>=1.40
 pydantic>=2.5
+Pillow>=10.1
+numpy>=1.26
+soundfile>=0.12
+# offline backup voice (only used after running setup_models.py)
+kokoro-onnx>=0.6.1
+onnxruntime>=1.18

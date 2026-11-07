@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FixShorts</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='12' fill='none' stroke='%23e6b33a' stroke-width='5'/%3E%3Ccircle cx='16' cy='16' r='4' fill='%23e6b33a'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="bar">
+  <div class="brand">
+    <span class="logo" aria-hidden="true"></span>
+    <span class="name">FixShorts</span>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+  <button class="btn ghost" id="open-settings" type="button"><span class="ti" data-icon="settings"></span>Settings</button>
+</header>
+
+<main class="layout">
+  <aside class="side">
+    <section class="composer" aria-labelledby="add-title">
+      <h1 id="add-title">Add Reddit links</h1>
+      <p class="hint">One link per line. Each one is read and scripted, then waits for your review before any video is made.</p>
+      <div id="login-banner" class="banner" hidden>
+        <p>Log in to Reddit once so the app can read posts.</p>
+        <button class="btn small" type="button" data-action="reddit-login">Log in to Reddit</button>
+      </div>
+      <label class="sr-only" for="links">Reddit links</label>
+      <textarea id="links" rows="5" placeholder="https://www.reddit.com/r/techsupport/comments/..."></textarea>
+      <div class="row">
+        <button class="btn primary" id="add" type="button">Add to queue</button>
+        <button class="btn link" id="sample" type="button">Try the sample</button>
+      </div>
+      <p class="note" id="add-note" role="status"></p>
+    </section>
+
+    <section class="queue" aria-labelledby="queue-title">
+      <div class="queue-head">
+        <h2 id="queue-title">Queue</h2>
+        <button class="btn small" id="approve-all" type="button" hidden>Approve all ready</button>
+      </div>
+      <ol id="queue" class="jobs"></ol>
+      <p id="queue-empty" class="empty">Nothing here yet. Paste a link above to start.</p>
+    </section>
+  </aside>
+
+  <section class="detail" id="detail" aria-live="polite">
+    <div class="welcome">
+      <h2>How it works</h2>
+      <ol class="steps">
+        <li><strong>Paste links.</strong> The app reads each post and writes a script with DeepSeek.</li>
+        <li><strong>Review.</strong> Every job stops here so you can check what the AI says and edit the script, links and description.</li>
+        <li><strong>Approve.</strong> Both videos (Short and full) and the thumbnail are made, ready to upload.</li>
+      </ol>
+    </div>
+  </section>
+</main>
+
+<dialog id="settings" aria-labelledby="settings-title">
+  <form method="dialog" class="settings" id="settings-form">
+    <div class="settings-head">
+      <h2 id="settings-title">Settings</h2>
+      <button class="btn ghost icon-only" value="close" aria-label="Close settings"><span class="ti" data-icon="x"></span></button>
+    </div>
+
+    <fieldset>
+      <legend>DeepSeek</legend>
+      <label for="s-key">API key <span class="muted" id="s-key-hint"></span></label>
+      <div class="row">
+        <input id="s-key" type="password" autocomplete="off" placeholder="Paste your key from platform.deepseek.com">
+        <button class="btn small" type="button" id="save-key">Save key</button>
+      </div>
+      <p class="muted" id="s-balance"></p>
+      <div class="grid2">
+        <div>
+          <label for="s-model">Model</label>
+          <select id="s-model" data-setting="ai.model">
+            <option value="deepseek-flash">deepseek-flash (cheapest)</option>
+            <option value="deepseek-v4-pro">deepseek-v4-pro (better, about 4x the cost)</option>
+          </select>
+        </div>
+        <div>
+          <label for="s-effort">Thinking</label>
+          <select id="s-effort" data-setting="ai.reasoning_effort">
+            <option value="low">Low (cheapest)</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Voice</legend>
+      <div class="choice">
+        <label><input type="radio" name="engine" value="edge" data-setting="voice.engine"> Edge voices (free, needs internet)</label>
+        <label><input type="radio" name="engine" value="kokoro" data-setting="voice.engine"> Offline voice <span class="muted" id="kokoro-note"></span></label>
+      </div>
+      <div class="grid2">
+        <div>
+          <label for="s-voice">Voice</label>
+          <select id="s-voice"></select>
+        </div>
+        <div>
+          <label for="s-rate">Speed</label>
+          <select id="s-rate" data-setting="voice.edge_rate">
+            <option value="-10%">Slower</option><option value="-5%">A bit slower</option>
+            <option value="+0%">Normal</option><option value="+5%">A bit faster</option>
+            <option value="+10%">Faster</option><option value="+15%">Fast</option><option value="+20%">Very fast</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn small" type="button" id="preview-voice"><span class="ti" data-icon="player-play"></span>Play sample</button>
+        <audio id="voice-audio" controls hidden></audio>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Look</legend>
+      <label>Thumbnail style</label>
+      <div class="thumb-styles" id="thumb-styles"></div>
+      <div class="grid2">
+        <div>
+          <label for="s-theme">Video colors</label>
+          <select id="s-theme" data-setting="video.theme">
+            <option value="auto">Rotate per video</option><option value="cyan">Cyan</option>
+            <option value="lime">Lime</option><option value="amber">Amber</option><option value="violet">Violet</option>
+          </select>
+        </div>
+        <div>
+          <label for="s-channel">Channel name on screen</label>
+          <input id="s-channel" data-setting="video.channel_name" placeholder="Leave empty for none">
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Reddit</legend>
+      <p id="s-reddit" class="muted"></p>
+      <div class="row">
+        <button class="btn small" type="button" data-action="reddit-login">Log in to Reddit</button>
+        <button class="btn small ghost" type="button" id="reddit-check">Check again</button>
+      </div>
+      <div class="grid2">
+        <div>
+          <label for="s-browser">Browser the app uses</label>
+          <select id="s-browser" data-setting="browser.channel">
+            <option value="msedge">Microsoft Edge</option><option value="chrome">Google Chrome</option>
+          </select>
+        </div>
+        <div class="check">
+          <label><input type="checkbox" id="s-show" data-setting="browser.show"> Show the window while reading</label>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Script length</legend>
+      <div class="grid2">
+        <div><label for="s-min">Fewest words</label><input id="s-min" type="number" min="60" max="200" data-setting="script.min_words"></div>
+        <div><label for="s-max">Most words</label><input id="s-max" type="number" min="80" max="240" data-setting="script.max_words"></div>
+      </div>
+      <p class="muted">About 140 words fits a Short under a minute.</p>
+    </fieldset>
+
+    <div class="settings-foot">
+      <span class="note" id="settings-note" role="status"></span>
+      <button class="btn primary" type="button" id="save-settings">Save settings</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" role="status" hidden></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,13 +1,22 @@
-"""Builds the video: one encoded file per segment, joined, then the voice-over is added."""
+"""Builds a video: one encoded file per segment, joined, then the voice-over is added."""
+import json
 import os
+import re
 import subprocess
 from pathlib import Path
-
-from PIL import Image
 
 from . import cards
 
 _ENCODER_CACHE = {}
+NO_WINDOW = 0x08000000 if os.name == "nt" else 0  # don't flash console windows on Windows
+
+# Light cleanup before loudness: cut rumble, even out the voice, cap peaks so the final gain stays clean
+VOICE_CHAIN = ("highpass=f=70,acompressor=threshold=0.1:ratio=4:attack=3:release=100:makeup=2,"
+               "alimiter=limit=0.4:attack=2:release=50:level=false")
+
+
+def _run(cmd, **kw):
+    return subprocess.run(cmd, creationflags=NO_WINDOW, **kw)
 
 
 # ---------- encoder ----------
@@ -20,18 +29,16 @@ def pick_encoder(cfg):
         return _ENCODER_CACHE[choice]
     x264 = ["-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p",
             "-profile:v", "high", "-g", "60"]
-    qsv = ["-vf", "format=nv12", "-c:v", "h264_qsv", "-preset", "veryfast", "-global_quality", "22",
-           "-g", "60"]
-    result = ("x264", x264)
+    qsv = ["-vf", "format=nv12", "-c:v", "h264_qsv", "-preset", "veryfast", "-global_quality", "22", "-g", "60"]
+    result = ("x264 (CPU)", x264)
     if choice in ("auto", "qsv"):
         test = [v["ffmpeg"], "-hide_banner", "-loglevel", "error", "-f", "lavfi",
-                "-i", f"color=c=black:s={v['width']}x{v['height']}:r={v['fps']}:d=0.3",
-                *qsv, "-f", "null", "-"]
-        ok = subprocess.run(test, capture_output=True).returncode == 0
-        if ok:
-            result = ("Intel Quick Sync", qsv)
-        elif choice == "qsv":
-            print("  Quick Sync isn't available on this PC, using x264 instead")
+                "-i", f"color=c=black:s=1080x1920:r={v['fps']}:d=0.3", *qsv, "-f", "null", "-"]
+        try:
+            if _run(test, capture_output=True).returncode == 0:
+                result = ("Intel Quick Sync", qsv)
+        except FileNotFoundError:
+            raise RuntimeError("FFmpeg isn't installed. Run setup.bat again, or install it with: winget install Gyan.FFmpeg")
     _ENCODER_CACHE[choice] = result
     return result
 
@@ -72,50 +79,56 @@ def label_for(seg, fix_no, n_fixes):
     }[seg.kind]
 
 
-# ---------- rendering ----------
-
-def render_video(script, narration, job_dir: Path, cfg, theme_name, log=print):
-    v = cfg["video"]
-    fps, ff = v["fps"], v["ffmpeg"]
-    work = job_dir / "_work"
-    work.mkdir(exist_ok=True)
-    enc_name, enc_args = pick_encoder(cfg)
-    log(f"  encoder: {enc_name}")
-
+def card_bases(segments, device, icon, theme_name, cfg, L):
+    """Background + card for every segment, as RGBA images."""
     t = cards.theme(theme_name)
-    segs = script.segments
-    n_fixes = len(script.fixes())
-    bounds = scene_bounds(narration, fps)
-    chunks = caption_chunks(narration.words)
-    words_by_seg = [[w for w in narration.words if w.segment == i] for i in range(len(segs))]
-
-    # Card layer per segment
+    n_fixes = sum(1 for s in segments if s.kind == "fix")
     bases, fix_no = [], 0
-    bg = cards.background(theme_name)
-    for i, seg in enumerate(segs):
+    bg = cards.background(theme_name, L)
+    for seg in segments:
         if seg.kind == "fix":
             fix_no += 1
-        layer = cards.card_layer(seg, label_for(seg, fix_no, n_fixes), script.device, theme_name, n_fixes)
         base = bg.copy()
-        base.alpha_composite(layer)
-        cards.channel_mark(base, v.get("channel_name", ""), t)
+        base.alpha_composite(cards.card_layer(seg, label_for(seg, fix_no, n_fixes), device, theme_name,
+                                              n_fixes, L, icon))
+        cards.channel_mark(base, cfg["video"].get("channel_name", ""), t, L)
         bases.append(base)
+    return bases
 
-    cover = bases[0].copy()
-    cards.draw_progress(cover, len(segs), 0, 0, t)
-    cover.convert("RGB").save(job_dir / "cover.png")
 
+# ---------- rendering ----------
+
+def render_video(segments, device, icon, narration, job_dir: Path, cfg, theme_name, L, out_name,
+                 progress=lambda f: None, cover_name=None):
+    v = cfg["video"]
+    fps, ff = v["fps"], v["ffmpeg"]
+    work = job_dir / "_work" / L.name
+    work.mkdir(parents=True, exist_ok=True)
+    _, enc_args = pick_encoder(cfg)
+
+    t = cards.theme(theme_name)
+    bounds = scene_bounds(narration, fps)
+    chunks = caption_chunks(narration.words)
+    words_by_seg = [[w for w in narration.words if w.segment == i] for i in range(len(segments))]
+    bases = card_bases(segments, device, icon, theme_name, cfg, L)
+
+    if cover_name:
+        cover = bases[0].copy()
+        cards.draw_progress(cover, len(segments), 0, 0, t, L)
+        cover.convert("RGB").save(job_dir / cover_name, quality=92)
+
+    total_frames = max(1, bounds[-1])
     scene_files = []
-    for i in range(len(segs)):
+    for i in range(len(segments)):
         f0, f1 = bounds[i], bounds[i + 1]
         seg_chunks = [c for c in chunks if c[0].segment == i]
         seg_words = words_by_seg[i]
         name = f"scene_{i:02d}.mp4"
         tmp = work / f"scene_{i:02d}.tmp.mp4"
         cmd = [ff, "-y", "-hide_banner", "-loglevel", "error",
-               "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{v['width']}x{v['height']}", "-r", str(fps),
+               "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{L.W}x{L.H}", "-r", str(fps),
                "-i", "-", *enc_args, "-an", str(tmp)]
-        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=NO_WINDOW)
         cache = {}
         try:
             for f in range(f0, f1):
@@ -126,38 +139,41 @@ def render_video(script, narration, job_dir: Path, cfg, theme_name, log=print):
                 frame = cache.get(key)
                 if frame is None:
                     img = bases[i].copy()
-                    cards.draw_progress(img, len(segs), i, spoken / max(1, len(seg_words)), t)
+                    cards.draw_progress(img, len(segments), i, spoken / max(1, len(seg_words)), t, L)
                     if chunk_i is not None:
-                        cap, pos = cards.caption_layer([w.text for w in seg_chunks[chunk_i]], hi, t)
+                        cap, pos = cards.caption_layer([w.text for w in seg_chunks[chunk_i]], hi, t, L)
                         img.alpha_composite(cap, dest=pos)
                     frame = img.convert("RGB").tobytes()
                     cache[key] = frame
                 proc.stdin.write(frame)
+                if f % 30 == 0:
+                    progress(f / total_frames)
             proc.stdin.close()
         except BrokenPipeError:
             pass
         err = proc.stderr.read().decode(errors="replace")
         if proc.wait() != 0:
-            raise RuntimeError(f"ffmpeg failed on scene {i}: {err.strip()[-800:]}")
+            raise RuntimeError(f"FFmpeg failed on scene {i + 1}: {err.strip()[-600:]}")
         os.replace(tmp, work / name)  # only a finished file gets its real name
         scene_files.append(name)
-        log(f"  rendered scene {i + 1}/{len(segs)} ({(f1 - f0) / fps:.1f}s, {len(cache)} unique frames)")
 
     (work / "scenes.txt").write_text("".join(f"file '{n}'\n" for n in scene_files), encoding="utf-8")
     import soundfile as sf
     sf.write(work / "voice.wav", narration.audio, narration.sample_rate, subtype="PCM_16")
 
-    out_tmp = job_dir / "video.tmp.mp4"
+    out_tmp = job_dir / (Path(out_name).stem + ".tmp.mp4")
     cmd = [ff, "-y", "-hide_banner", "-loglevel", "error",
            "-f", "concat", "-safe", "0", "-i", "scenes.txt", "-i", "voice.wav",
            "-map", "0:v", "-map", "1:a", "-c:v", "copy",
            "-af", _loudnorm_filter(ff, work / "voice.wav"), "-ar", "48000", "-c:a", "aac", "-b:a", "160k",
+           "-map_metadata", "-1", "-metadata", "title=", "-fflags", "+bitexact",
            "-movflags", "+faststart", "-shortest", str(out_tmp.resolve())]
-    r = subprocess.run(cmd, cwd=work, capture_output=True, text=True)
+    r = _run(cmd, cwd=work, capture_output=True, text=True)
     if r.returncode != 0:
-        raise RuntimeError(f"ffmpeg failed joining scenes: {r.stderr.strip()[-800:]}")
-    final = job_dir / "video.mp4"
+        raise RuntimeError(f"FFmpeg failed joining scenes: {r.stderr.strip()[-600:]}")
+    final = job_dir / out_name
     os.replace(out_tmp, final)
+    progress(1.0)
 
     if not v.get("keep_work_files", False):
         for p in work.iterdir():
@@ -166,18 +182,10 @@ def render_video(script, narration, job_dir: Path, cfg, theme_name, log=print):
     return final
 
 
-# Light cleanup before loudness: cut rumble, even out the voice, cap peaks so the final gain stays clean
-VOICE_CHAIN = ("highpass=f=70,acompressor=threshold=0.1:ratio=4:attack=3:release=100:makeup=2,"
-               "alimiter=limit=0.4:attack=2:release=50:level=false")
-
-
 def _loudnorm_filter(ff, wav, target="I=-14:TP=-1.5:LRA=11"):
     """Two-pass loudness: measure the voice first, then normalize it exactly to YouTube's -14 LUFS."""
-    import json
-    import re
-
-    r = subprocess.run([ff, "-hide_banner", "-i", str(wav), "-af", f"{VOICE_CHAIN},loudnorm={target}:print_format=json",
-                        "-f", "null", "-"], capture_output=True, text=True)
+    r = _run([ff, "-hide_banner", "-i", str(wav), "-af", f"{VOICE_CHAIN},loudnorm={target}:print_format=json",
+              "-f", "null", "-"], capture_output=True, text=True)
     m = re.search(r"\{[^{}]*\"input_i\"[^{}]*\}", r.stderr)
     if not m:
         return f"{VOICE_CHAIN},loudnorm={target}"
