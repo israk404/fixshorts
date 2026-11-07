@@ -296,6 +296,18 @@ function editor(d) {
       h("ul", { class: "notes" }, s.review_notes.map((t) => h("li", { text: t })))) : null,
     h("div", { id: "rules" }, rulesView(d.problems || []))));
 
+  // Problem words
+  out.push(h("div", { class: "block" },
+    h("h3", { text: "Problem words" }),
+    h("p", { class: "lead", text: "People search for the exact error and click when they see it. Titles, the thumbnail, the first card and the description must contain it unchanged. If the AI got it wrong, correct it here and in those places." }),
+    h("div", { class: "grid2" },
+      h("div", {}, h("label", { for: "err-text", text: "Exact error, as shown on screen (empty if none)" }),
+        h("input", { id: "err-text", class: "exact", value: s.error_text || "", spellcheck: "false",
+                     oninput: (e) => { s.error_text = e.target.value; touch(); } })),
+      h("div", {}, h("label", { for: "search-words", text: "Problem in search words" }),
+        h("input", { id: "search-words", value: s.search_phrase || "", oninput: (e) => { s.search_phrase = e.target.value; touch(); } }))),
+    h("div", { class: "where", id: "where" })));
+
   // Script
   const segBox = h("div", {});
   let fix = 0;
@@ -369,7 +381,7 @@ function editor(d) {
     h("button", { class: "btn", type: "button", onclick: save, text: "Save changes" }),
     h("button", { class: "btn primary", type: "button", onclick: approve, text: "Approve and make videos" })));
 
-  setTimeout(() => { renderLinks(); updateTotal(); }, 0);
+  setTimeout(() => { renderLinks(); updateTotal(); updateWhere(); }, 0);
   return out;
 }
 
@@ -430,8 +442,32 @@ function updateTotal() {
   el.className = "total" + (n < min || n > max ? " off" : "");
 }
 
+function updateWhere() {
+  const box = $("#where");
+  if (!box || !editing) return;
+  const s = editing;
+  const err = (s.error_text || "").trim();
+  const phrase = (s.search_phrase || "").trim();
+  const term = err || phrase;
+  box.replaceChildren();
+  if (!term) { box.append(h("span", { class: "miss", text: "Fill the exact error or the search words." })); return; }
+  const has = (text) => err ? text.includes(err) : text.toLowerCase().includes(phrase.toLowerCase());
+  const hook = s.segments.find((x) => x.kind === "hook") || { headline: "", detail: "" };
+  const titles = s.upload.titles.filter(has).length;
+  const first = (s.upload.description.trim().split("\n")[0] || "");
+  const checks = [
+    [`Titles ${titles}/${s.upload.titles.length}`, err ? titles === s.upload.titles.length : titles >= 2],
+    ["Thumbnail", (s.thumbnail_text || "").toLowerCase().includes(term.toLowerCase())],
+    ["First card", has(hook.headline + " " + hook.detail)],
+  ];
+  if (err) checks.push(["Description", has(first)]);
+  box.append(h("span", { class: "muted", text: `"${term}" appears in:` }),
+    ...checks.map(([name, ok]) => h("span", { class: ok ? "hit" : "miss", text: (ok ? "✓ " : "✗ ") + name })));
+}
+
 function touch() {
   dirty = true;
+  updateWhere();
   const n = $("#dirty-note");
   if (n) n.textContent = "Unsaved changes";
 }

@@ -23,6 +23,7 @@ Paste Reddit links about PC, phone and tech problems. FixShorts reads each post,
    A post you've used before is skipped, even months later and even if you deleted that job. The app matches posts by Reddit's post ID, so www., old., mobile, redd.it and share links all count as the same post (share links are checked once the page opens, before any AI cost). To make one again on purpose, tick **Allow links I've used before**, or press **Make it anyway** on the job.
 2. **Review** each job marked gold ("Ready for your review"). You see:
    - what the AI says: its confidence, risks the video mentions, notes for you, and a rule check
+   - the problem words: the exact error (like `0x80070005` or `DRIVER_IRQL_NOT_LESS_OR_EQUAL`) and the problem in search words (like "Wi-Fi keeps disconnecting"), with a live check of where they appear
    - the script, segment by segment: on-screen headline, small on-screen text, and what the voice says
    - links for the description, each marked Official site or Check this site, and whether it opens
    - thumbnail words, problem icon and brand logo, titles, description, tags, hashtags and pinned comment
@@ -30,6 +31,13 @@ Paste Reddit links about PC, phone and tech problems. FixShorts reads each post,
    Edit anything, then press **Save changes**. **Write again** asks the AI for a new script.
 3. Press **Approve and make videos**, or **Approve all ready** for the whole batch. Videos are made one job at a time.
 4. When a job shows **Videos ready**, open it to play both videos, copy each upload field, or open the folder.
+
+**Exact problem words:** people search for the exact error they see and click when a title shows it. So the AI copies the error code or message from the post character for character, and the app checks it:
+
+- With an error, it must appear unchanged in the first card, every title, the thumbnail and the description's first line. An error that isn't in the post (a dropped digit, a "corrected" spelling) is sent back to the AI to fix.
+- Without an error, the problem in the asker's own words ("laptop won't turn on") must be on the first card, the thumbnail and at least 2 titles.
+
+The thumbnail is in capitals, but the error keeps its exact letters (`0x80070005` stays lowercase x). Long codes with underscores wrap at the underscores instead of shrinking the text.
 
 **Uploading:** upload the full video first (`video.mp4` with `thumbnail.jpg`), then the Short (`short.mp4`). In YouTube Studio, set the Short's **Related video** to the full video. Links in Shorts descriptions aren't clickable, so the Short tells viewers the links are in the full video.
 
@@ -89,7 +97,7 @@ Most settings are in the app. Advanced defaults live in `config.toml`; what you 
 
 `app.py` serves the app and runs two background workers (`fixshorts/jobs.py`):
 
-- **Prep worker:** `history.py` skips posts you've used before, `extract.py` reads the Reddit page in the app's own browser, `writer.py` writes the script with DeepSeek, `schema.py` checks it (no Reddit mentions, no AI-sounding phrases, length, structure), and `links.py` rates and tests each link.
+- **Prep worker:** `history.py` skips posts you've used before, `extract.py` reads the Reddit page in the app's own browser, `writer.py` writes the script with DeepSeek, `schema.py` checks it (exact problem words, no Reddit mentions, no AI-sounding phrases, length, structure), and `links.py` rates and tests each link.
 - **Video worker:** after you approve, `tts_edge.py` records the voice with exact word timings, `cards.py` and `render.py` draw and encode both videos with FFmpeg (Intel Quick Sync when available), `thumbs.py` makes the thumbnail, and `kit.py` writes the upload details.
 
 Fonts and icons: Poppins (SIL Open Font License) and Tabler Icons (MIT), in `assets/fonts`. Offline voice: Kokoro-82M (Apache 2.0).

@@ -167,9 +167,30 @@ def text_w(f, s):
     return f.getlength(s)
 
 
+def split_long(f, word, max_w):
+    """Break a word wider than max_w: after underscores first (error codes), else after hyphens or slashes,
+    else between characters."""
+    if text_w(f, word) <= max_w:
+        return [word]
+    parts = [p for p in __import__("re").split(r"(?<=[_\-/])", word) if p]
+    if len(parts) == 1:
+        parts = list(word)
+    out, cur = [], ""
+    for p in parts:
+        if cur and text_w(f, cur + p) > max_w:
+            out.append(cur)
+            cur = p
+        else:
+            cur += p
+    if cur:
+        out.append(cur)
+    return out
+
+
 def wrap(f, text, max_w):
     lines, line = [], ""
-    for word in text.split():
+    words = [piece for w in text.split() for piece in split_long(f, w, max_w)]
+    for word in words:
         test = f"{line} {word}".strip()
         if text_w(f, test) <= max_w or not line:
             line = test
@@ -311,9 +332,12 @@ def card_layer(seg, kind_label, device, theme_name, n_fixes, L=SHORT, problem_ic
     """Full-frame RGBA layer with the card (and, horizontally, the big icon) for one segment."""
     t = theme(theme_name)
     size = L.hook_headline if seg.kind == "hook" else L.headline
+    inner_w = (L.x1 - L.x0) - 112
     while True:
         bottom, _ = _layout_card(seg, kind_label, device, t, n_fixes, size, L)
-        if bottom <= L.card_max_bottom or size <= 56:
+        hf = font("Bold", size)
+        whole = all(text_w(hf, w) <= inner_w for w in seg.headline.split() if "_" not in w)
+        if (bottom <= L.card_max_bottom and whole) or size <= 56:
             break
         size -= 4
 
@@ -456,7 +480,8 @@ def caption_layer(words, highlight, t, L=SHORT):
             line.append(w)
             lw += need
         lines.append(line)
-        if len(lines) <= 2 or size <= 56:
+        too_wide = any(text_w(f, w) > L.cap_max_w for w in words)
+        if (len(lines) <= 2 and not too_wide) or size <= 44:
             break
         size -= 6
 

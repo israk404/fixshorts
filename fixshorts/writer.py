@@ -169,7 +169,7 @@ def write_script(post_text: str, cfg, thread_urls=(), client=None, log=print):
         try:
             script = tidy(Script.model_validate(extract_json(text)))
             finalize_links(script, set(thread_urls))
-            issues = problems(script, cfg)
+            issues = problems(script, cfg, post_text)
         except Exception as e:
             script, issues = None, [f"the reply was not valid JSON in the required shape ({e})"]
 

@@ -1,4 +1,6 @@
 """YouTube thumbnails (1280x720) in three styles: bold, split and clean."""
+import re
+
 from PIL import Image, ImageDraw, ImageFilter
 
 from .cards import LOGOS, brand_color, font, glyph, icon_font, logo_image, theme, wrap
@@ -12,7 +14,9 @@ def _fit_text(text, max_w, max_lines, start, smallest=64):
     while size > smallest:
         f = font("Bold", size)
         lines = wrap(f, text, max_w)
-        if len(lines) <= max_lines and all(f.getlength(l) <= max_w for l in lines):
+        # only error codes (with underscores) may be broken across lines; normal words must fit whole
+        whole = all(f.getlength(w) <= max_w for w in text.split() if "_" not in w)
+        if len(lines) <= max_lines and whole and all(f.getlength(l) <= max_w for l in lines):
             return f, lines, size
         size -= 6
     f = font("Bold", smallest)
@@ -71,7 +75,11 @@ def _glow_bg(accent, base=(10, 13, 20)):
 def make_thumbnail(script, theme_name, style, out_path):
     t = theme(theme_name)
     accent, good, danger = t["accent"], t["good"], t["danger"]
-    text = (script.thumbnail_text or (script.segments[0].headline if script.segments else "")).upper()
+    raw = script.thumbnail_text or (script.segments[0].headline if script.segments else "")
+    text = raw.upper()
+    err = (script.error_text or "").strip()
+    if err:  # capitals for normal words, but the exact error keeps its own form (0x80070005, not 0X80070005)
+        text = re.sub(re.escape(err), lambda m: err, text, flags=re.I)
     icon = glyph(script.icon)
     device = (script.device or "").upper()
 

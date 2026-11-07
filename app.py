@@ -50,6 +50,18 @@ def _summary(job):
     }
 
 
+def _source_text(job):
+    """The post as the AI saw it, so the rule check can confirm the exact error is really in it."""
+    from fixshorts.extract import post_to_text
+
+    post = store.post(job)
+    if not post:
+        return None
+    if post.get("sample"):
+        return (ROOT / "input" / "sample_post.txt").read_text(encoding="utf-8")
+    return post_to_text(post)
+
+
 def _files(job):
     p = store.path(job)
     return {name: int((p / name).stat().st_mtime) for name in FILES if (p / name).exists()}
@@ -133,7 +145,7 @@ def job_detail(job_id: str):
                     "layout": post.get("layout", ""), "sample": bool(post.get("sample"))}}
     if script:
         out["script"] = json.loads(script.model_dump_json())
-        out["problems"] = problems(script, cfg)
+        out["problems"] = problems(script, cfg, _source_text(job))
         out["words"] = script.word_count()
         out["upload"] = kit.upload_fields(script) if script.upload else None
     return out
@@ -166,7 +178,7 @@ def save_script(job_id: str, body: dict = Body(...)):
     store.save_script(job, script)
     title = kit.title(script)
     store.update(job, title=title[:140], attention=attention_points(script, cfg))
-    return {"problems": problems(script, cfg), "words": script.word_count(),
+    return {"problems": problems(script, cfg, _source_text(job)), "words": script.word_count(),
             "upload": kit.upload_fields(script) if script.upload else None,
             "links": json.loads(script.model_dump_json())["links"], "attention": job.attention}
 

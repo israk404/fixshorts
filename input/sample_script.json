@@ -10,14 +10,17 @@
   "review_notes": [
     "Left out the netsh winsock reset tip: few votes and it was for Windows 7"
   ],
-  "thumbnail_text": "WI-FI KEEPS DROPPING",
+  "error_text": "",
+  "search_phrase": "Wi-Fi keeps disconnecting",
+  "thumbnail_text": "WI-FI KEEPS DISCONNECTING",
   "icon": "wifi-off",
+  "logo": "windows",
   "segments": [
     {
       "kind": "hook",
-      "headline": "Laptop Wi-Fi keeps dropping?",
+      "headline": "Laptop Wi-Fi keeps disconnecting?",
       "detail": "Every other device works fine",
-      "narration": "Your laptop's Wi-Fi keeps dropping every few minutes while everything else stays online? Here's how to fix it.",
+      "narration": "Laptop Wi-Fi keeps disconnecting every few minutes while everything else stays online? Here's how to fix it.",
       "logo": ""
     },
     {
@@ -75,10 +78,10 @@
   "upload": {
     "titles": [
       "Laptop Wi-Fi Keeps Disconnecting? 3 Fixes for Windows 11",
-      "Wi-Fi Drops Every Few Minutes on Windows 11? Try This",
-      "Fix Random Wi-Fi Disconnects on Your Laptop"
+      "Wi-Fi Keeps Disconnecting on Windows 11? Do This",
+      "Fix Wi-Fi Keeps Disconnecting Every Few Minutes on a Laptop"
     ],
-    "description": "Laptop Wi-Fi dropping every few minutes while other devices work fine?\n1. Turn off Wi-Fi power saving in Device Manager\n2. Install the newest driver from Intel or your laptop maker\n3. Use Network reset (it forgets saved Wi-Fi passwords)",
+    "description": "Laptop Wi-Fi keeps disconnecting every few minutes while other devices work fine?\n1. Turn off Wi-Fi power saving in Device Manager\n2. Install the newest driver from Intel or your laptop maker\n3. Use Network reset (it forgets saved Wi-Fi passwords)",
     "tags": [
       "wifi keeps disconnecting",
       "laptop wifi dropping",
@@ -97,6 +100,5 @@
       "#techtips"
     ],
     "pinned_comment": "Which fix worked for you: 1, 2 or 3? Drop the number so others know what to try first."
-  },
-  "logo": "windows"
+  }
 }
